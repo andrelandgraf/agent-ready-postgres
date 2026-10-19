@@ -21,7 +21,7 @@ A local web dashboard, the **Software Factory**, shows a Kanban board, a team of
 
 | Service | Account | Resource |
 |---|---|---|
-| Neon | personal (`andre.timo.landgraf@gmail.com`), org `org-summer-dust-66593634` | project `summer-credit-62081215`, default branch `main` |
+| Neon | personal (`andre.timo.landgraf@gmail.com`), org `org-summer-dust-66593634` | project `odd-block-46739925` (Postgres 18, for Neon Realtime), default branch `main` |
 | Vercel | personal (`andre-landgraf`), team `team_3lnclzRbyCETAcu719mQjKVP` | project `vibecastly` (`prj_GbWkW4Y9DLl7WEXeXcjQYorFHUZn`) |
 | GitHub | `andrelandgraf` | both repos |
 | Copilot CLI | `andrelandgraf` | 1.0.89-4, started with `./scripts/copilot` |
@@ -39,7 +39,7 @@ The preview environment is the riskiest part, so it is proven first on a throwaw
 
 Settled on Oct 19 with a throwaway branch `preview/proof` (created, inspected, deleted):
 
-- `neon checkout preview/proof --create --project-id summer-credit-62081215` took 7.8 s with neon 8.4.3. It applied `neon.ts` on creation, deploying both Functions (`imagegen`, `report`) to the branch, and wrote 13 variables to `.env.local`: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEON_BRANCH`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_JWKS_URL`, `NEON_FUNCTION_IMAGEGEN_BASE_URL`, `NEON_FUNCTION_REPORT_BASE_URL`, four `AWS_*` storage keys, `NEON_AI_GATEWAY_TOKEN`, `NEON_AI_GATEWAY_BASE_URL`.
+- `neon checkout preview/proof --create --project-id odd-block-46739925` took 7.8 s with neon 8.4.3 (CI now pins 8.8.0, which can enable Realtime). It applied `neon.ts` on creation, deploying both Functions (`imagegen`, `report`) to the branch, and wrote 13 variables to `.env.local`: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEON_BRANCH`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_JWKS_URL`, `NEON_FUNCTION_IMAGEGEN_BASE_URL`, `NEON_FUNCTION_REPORT_BASE_URL`, four `AWS_*` storage keys, `NEON_AI_GATEWAY_TOKEN`, `NEON_AI_GATEWAY_BASE_URL`.
 - The branch has its own Neon Auth (JWKS served from the branch endpoint) with production's users, organizations, memberships, and people. The branch Function answers `401` without a JWT.
 - `NEXT_PUBLIC_AGENT_URL` for the preview is the branch's `NEON_FUNCTION_IMAGEGEN_BASE_URL`.
 - Neon does not provide `NEON_AUTH_COOKIE_SECRET`. The workflow generates a random one per preview and masks it.
@@ -64,13 +64,14 @@ Explicit steps rather than `neon-solutions/neon-vercel-preview-action`: the acti
 
 Runs on `pull_request` (opened, synchronize, reopened) from branches in the same repo only, so secrets never reach fork PRs. `permissions: contents: read, pull-requests: write`. The Neon and Vercel CLIs are installed at pinned versions. Every third-party action is pinned to a commit SHA. Values fetched at runtime (connection strings, Auth secrets) are masked with `::add-mask::` before any step can print them.
 
-1. **Create Neon preview branch** `preview/pr-<number>` from production with `neon checkout`, explicitly linked to project `summer-credit-62081215`. The step asserts the resulting branch id is not production's branch id.
+1. **Create Neon preview branch** `preview/pr-<number>` from production with `neon checkout`, explicitly linked to project `odd-block-46739925`. The step asserts the resulting branch id is not production's branch id.
 2. **Run Drizzle migration on the preview branch** with `drizzle-kit migrate` against that branch's `DATABASE_URL`.
 3. **Schema diff:** `neondatabase/schema-diff-action` comments the diff between production and `preview/pr-<number>` on the PR.
 4. **Deploy Functions to the preview branch** if the proof shows checkout did not already, then read the branch's Function URL.
-5. **Deploy web preview to Vercel** from `web/` through the REST API (`scripts/vercel-deploy.mjs`) with only the keys the web app reads: `NEXT_PUBLIC_AGENT_URL` (the branch Function URL), `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`.
-6. **Trust the preview domain in Neon Auth** for the preview branch, if the proof shows it is required.
-7. **Comment** the preview URL, the Neon branch name, and the workflow run id on the PR.
+5. **Give the Function the branch's Realtime secret:** `neon functions deploy imagegen --env REALTIME_SECRET=…` with the branch's `NEON_REALTIME_SECRET`. Functions don't receive it automatically, and they drop user-set `NEON_*` variables.
+6. **Deploy web preview to Vercel** from `web/` through the REST API (`scripts/vercel-deploy.mjs`) with only the keys the web app reads: `NEXT_PUBLIC_AGENT_URL` (the branch Function URL), `NEXT_PUBLIC_NEON_REALTIME_URL`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`.
+7. **Trust the preview domain in Neon Auth and Realtime** for the preview branch.
+8. **Comment** the preview URL, the Neon branch name, and the workflow run id on the PR.
 
 `.github/workflows/cleanup.yml` runs on `pull_request` closed and deletes `preview/pr-<number>` with `neondatabase/delete-branch-action`, by that exact name.
 
