@@ -178,10 +178,10 @@ export function Factory() {
   async function resetRun() {
     setBusy(true);
     setBeatIndex(-1);
-    doneActions.current.clear();
-    screenshotLoaded.current = false;
     try {
       await inflight.current?.catch(() => undefined);
+      doneActions.current.clear();
+      screenshotLoaded.current = false;
       await post('reset');
       setError(null);
       setNotice(null);

@@ -50,13 +50,17 @@ export function ScreenshotPanel({
   onLoaded: (loaded: boolean) => void;
 }) {
   const [attempt, setAttempt] = useState(0);
+  const [decodeFailed, setDecodeFailed] = useState<string | null>(null);
   const waiting = beat?.kind === 'wait' && beat.until === 'screenshot';
   const loaded = useScreenshot(run, attempt);
-  const url = loaded && 'url' in loaded ? loaded.url : null;
+  const url = loaded && 'url' in loaded && decodeFailed !== loaded.url ? loaded.url : null;
+  const failure = loaded && 'failed' in loaded ? loaded.failed : loaded && decodeFailed === ('url' in loaded ? loaded.url : null) ? 'not a readable image' : null;
 
-  useEffect(() => {
-    onLoaded(url !== null);
-  }, [url, onLoaded]);
+  function retry() {
+    onLoaded(false);
+    setDecodeFailed(null);
+    setAttempt((a) => a + 1);
+  }
 
   return (
     <section className="rounded-2xl border border-border/60 bg-card/60 p-4" data-testid="screenshot-panel">
@@ -73,12 +77,21 @@ export function ScreenshotPanel({
           className="block overflow-hidden rounded-lg border border-border/60"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt="E2E agent screenshot of the addons feature" className="w-full" />
+          <img
+            src={url}
+            alt="E2E agent screenshot of the addons feature"
+            className="w-full"
+            onLoad={() => onLoaded(true)}
+            onError={() => {
+              onLoaded(false);
+              setDecodeFailed(url);
+            }}
+          />
         </motion.a>
-      ) : loaded && 'failed' in loaded ? (
+      ) : failure ? (
         <div role="alert" className="flex items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-          The screenshot was uploaded but did not load ({loaded.failed}).
-          <button type="button" onClick={() => setAttempt((a) => a + 1)} className="inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline">
+          The screenshot was uploaded but did not load ({failure}).
+          <button type="button" onClick={retry} className="inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline">
             <RotateCcw className="size-3" /> Retry
           </button>
         </div>

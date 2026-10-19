@@ -65,7 +65,7 @@ export function resumeIndex(state: FactoryState): number {
   const run = state.run;
   const find = (predicate: (beat: Beat) => boolean) => SCRIPT.findIndex(predicate);
   if (!run) return -1;
-  if (run.screenshotAt) return SCRIPT.length - 1;
+  if (run.screenshotAt) return find((b) => b.kind === 'wait' && b.until === 'screenshot');
   if (run.prNumber || run.fallback) {
     return previewReady(state) ? find((b) => b.kind === 'wait' && b.until === 'screenshot') : find((b) => b.kind === 'wait' && b.until === 'preview-ready');
   }

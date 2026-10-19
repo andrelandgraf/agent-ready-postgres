@@ -46,9 +46,15 @@ async function gh<T>(method: string, path: string, body?: unknown): Promise<T> {
     body: body ? JSON.stringify(body) : undefined,
     cache: 'no-store',
   });
-  if ((res.status === 403 || res.status === 429) && res.headers.get('x-ratelimit-remaining') === '0') {
+  if (res.status === 403 || res.status === 429) {
+    const retryAfter = Number(res.headers.get('retry-after'));
     const reset = Number(res.headers.get('x-ratelimit-reset'));
-    throw new RateLimited(new Date(Number.isFinite(reset) ? reset * 1000 : Date.now() + 60_000).toISOString());
+    if (Number.isFinite(retryAfter) && retryAfter > 0) {
+      throw new RateLimited(new Date(Date.now() + retryAfter * 1000).toISOString());
+    }
+    if (res.headers.get('x-ratelimit-remaining') === '0') {
+      throw new RateLimited(new Date(Number.isFinite(reset) ? reset * 1000 : Date.now() + 60_000).toISOString());
+    }
   }
   if (!res.ok) throw new Error(`GitHub ${method} ${path} → ${res.status}: ${(await res.text()).slice(0, 300)}`);
   return res.status === 204 || res.status === 202 ? (null as T) : ((await res.json()) as T);
