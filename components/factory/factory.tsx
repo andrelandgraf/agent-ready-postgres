@@ -9,6 +9,8 @@ import { Board } from './board';
 import { BranchesPanel } from './branches-panel';
 import { PrPanel } from './pr-panel';
 import { ScreenshotPanel } from './screenshot-panel';
+import { PasswordGate } from './password-gate';
+import { apiFetch, forgetPassword, Unauthorized } from './password';
 
 const POLL_MS = 2500;
 
@@ -24,7 +26,7 @@ function isFactoryState(value: unknown): value is FactoryState {
 }
 
 async function post(action: string, extra: Record<string, unknown> = {}): Promise<unknown> {
-  const res = await fetch('/api/run', {
+  const res = await apiFetch('/api/run', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ action, ...extra }),
@@ -43,11 +45,22 @@ export function Factory() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [locked, setLocked] = useState(false);
   const stateRef = useRef<FactoryState | null>(null);
   const resumed = useRef(false);
 
   const refresh = useCallback(async () => {
-    const res = await fetch('/api/state', { cache: 'no-store' });
+    let res: Response;
+    try {
+      res = await apiFetch('/api/state');
+    } catch (e) {
+      if (e instanceof Unauthorized) {
+        forgetPassword();
+        setLocked(true);
+        return null;
+      }
+      throw e;
+    }
     const body: unknown = await res.json();
     if (!res.ok || !isFactoryState(body)) {
       setError(typeof body === 'object' && body !== null && 'error' in body ? String(body.error) : 'State failed');
@@ -145,6 +158,17 @@ export function Factory() {
     } finally {
       setBusy(false);
     }
+  }
+
+  if (locked) {
+    return (
+      <PasswordGate
+        onUnlocked={() => {
+          setLocked(false);
+          void refresh();
+        }}
+      />
+    );
   }
 
   return (

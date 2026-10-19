@@ -10,7 +10,7 @@ This runs live on stage. Be fast, not thorough. Run the three commands below in 
 1. Read the preview the dashboard is showing:
 
    ```bash
-   curl -s -u "factory:$FACTORY_PASSWORD" "$FACTORY_URL/api/state" | jq -r '.pr.number, .pr.previewUrl, ([.branches[] | select(.name == ("preview/pr-" + (.pr.number|tostring)))][0].id)'
+   curl -s -H "authorization: Bearer $FACTORY_PASSWORD" "$FACTORY_URL/api/state" | jq -r '.pr.number, .pr.previewUrl, ([.branches[] | select(.name == ("preview/pr-" + (.pr.number|tostring)))][0].id)'
    ```
 
    It prints the PR number, the preview URL, and the preview branch id. Stop and report if the URL is `null`.

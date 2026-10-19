@@ -17,7 +17,7 @@ The agents on the board are animation; every branch, PR, check, preview, and scr
 ## Commands
 
 ```bash
-bun run dev               # dashboard on http://127.0.0.1:3100 (user factory, FACTORY_PASSWORD)
+bun run dev               # dashboard on http://127.0.0.1:3100; sign in with FACTORY_PASSWORD
 ./scripts/e2e             # the E2E tester, interactive, for the stage
 bun run reset             # close the demo PR, delete dev/preview branches and preview deployments
 bun run rehearse          # run the real steps from the terminal, timed, then reset

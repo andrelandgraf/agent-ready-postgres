@@ -10,7 +10,7 @@
    | `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEON_BRANCH` | The dashboard's run log: Neon project `software-factory` (`dark-frost-78693138`), branch `main` |
    | `NEON_API_KEY` | Neon key `software-factory`, limited to vibecastly's project `summer-credit-62081215`; used by the dashboard and the Neon MCP server |
    | `VERCEL_TOKEN` | Vercel token limited to the vibecastly project; reset deletes preview deployments with it |
-   | `FACTORY_PASSWORD` | Password for the dashboard (user `factory`) |
+   | `FACTORY_PASSWORD` | The dashboard password; the browser keeps it in localStorage and sends it as a bearer token to the API |
    | `FACTORY_TOKEN` | Bearer token the E2E tester uploads its screenshot with |
    | `FACTORY_URL` | Where the E2E tester finds the dashboard |
    | `DEMO_EMAIL`, `DEMO_PASSWORD` | The vibecastly demo account the E2E tester signs in with |
