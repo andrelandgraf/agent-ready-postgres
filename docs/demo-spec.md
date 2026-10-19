@@ -56,14 +56,7 @@ Settled by the proof deployment on PR #2:
 
 vibecastly applies schema with `drizzle-kit push` and has no migration files. `.gitignore` excludes `drizzle/`; that line goes.
 
-Baseline procedure, rehearsed first on a disposable branch created from production:
-
-1. Generate the baseline migration from `src/db/schema.ts` into `drizzle/` and commit it with its `meta/_journal.json` and snapshot.
-2. Compare production's `public` schema against the schema the baseline creates (apply the baseline to an empty branch, then `neon branches schema-diff` against production). Stop on any difference.
-3. Insert one row into `drizzle.__drizzle_migrations` with the baseline's SQL hash and `created_at` set to the journal's `when` value, not the current time. Drizzle selects pending migrations by that timestamp.
-4. Verify: `drizzle-kit migrate` with only the baseline changes nothing; with the addons migration it applies addons once; running it again changes nothing.
-
-Step 3 on production is one row in Drizzle's bookkeeping table and changes no application table. It runs only after the disposable-branch rehearsal passes and Andre approves it.
+The baseline is generated from `src/db/schema.ts` into `drizzle/0000_baseline.sql` with every `CREATE TABLE` and `CREATE INDEX` made `IF NOT EXISTS`. On any branch created from production it is a no-op that records itself, so production needs no bookkeeping write. Rehearsed on a disposable branch: the first `drizzle-kit migrate` recorded the baseline once with the journal's `when`, a second run changed nothing, and the addons migration applies once on top. A drift check (`drizzle-kit push`) found one pre-existing difference that the baseline never touches: production's `creator_profiles.updated_at` is `timestamptz` while the schema says `timestamp`.
 
 ### Preview workflow (vibecastly, `.github/workflows/preview.yml`)
 
@@ -121,44 +114,28 @@ Sequence after the drag into To do. Scripted steps are timed animation; real ste
 | "Creating dev branch" | real: Neon API creates `dev/addons` from production | Branch appears in the branches panel |
 | "Writing migration", "Running migration on dev branch", "Tests passing" | scripted | Card moves to In progress, status lines tick |
 | Security reviewer assigned, "Reviewing diff" | scripted | Second avatar joins, card moves to In review |
-| "Opening PR" | real: GitHub API opens a PR from `feat/addons` to `main` | PR panel appears with a live link |
+| "Opening PR" | real: GitHub API opens a PR from `feat/addons` to `demo/main` | PR panel appears with a live link |
 | Preview workflow | real: GitHub Actions | Checks go from queued to green, `preview/pr-<n>` appears, schema diff and preview URL land |
 | E2E tester assigned | real: Andre runs Copilot CLI in a terminal | Screenshot appears in the panel |
 
 The demo ends at a green PR with a preview deployment and the e2e screenshot. Nothing is merged on stage, so production is never migrated during a rehearsal.
 
-Each run writes `.factory/run.json` with the ids it owns: the run id, the dev branch id, the PR number, the workflow run ids, the preview branch id, and the Vercel deployment id.
+Each run is a row in the dashboard's own Postgres (`runs` in Neon project `software-factory`): the dev branch id, the PR number, when it opened, whether it switched to the fallback, an event log, and the screenshot. One run can be in progress at a time.
 
-`bun run reset`:
-
-1. Cancels this run's in-progress workflow runs and waits until they stop.
-2. Closes this run's PR, which triggers the cleanup workflow.
-3. Deletes this run's dev branch and preview branch by id, and this run's Vercel preview deployment, treating already-deleted resources as done.
-4. Removes this run's screenshot and resets the board.
-
-Reset never touches resources it did not record, including the fallback PR. "Nothing left behind" means no live branch, deployment, or open PR from that run; closed PRs and workflow history remain.
+Reset (the dashboard button or `bun run reset`) cleans up the demo's whole footprint, not only the current run's: it cancels the workflows of every open PR from `feat/addons` and closes it, deletes `dev/addons`, and deletes the `preview/pr-<n>` branches and the Vercel deployments tagged `meta.factoryPr=<n>` of those PRs and the five most recently closed ones. Overlapping rehearsals therefore reset each other. The fallback PR comes from `demo/fallback` and is never touched. "Nothing left behind" means no live branch, deployment, or open PR from the demo flow; closed PRs and workflow history remain.
 
 ### Fallback
 
-A second PR, `demo/fallback`, labeled `demo-fallback`, has a finished green run, a live preview, and a stored screenshot. The dashboard switches to it when the live preview workflow is not green by 4:30 into the demo, or immediately on a real failure, and says so on screen.
+A second PR, `demo/fallback`, labeled `demo-fallback`, has a finished green run, a live preview, and a stored screenshot. The dashboard switches to it when the live preview workflow is not green three minutes after the demo PR opens (`fallbackAfterMs`), or immediately on a failed workflow, and says so on screen.
 
 ### E2E testing agent (Copilot CLI)
 
-A skill `e2e-preview-screenshot` in `agent-ready-postgres/.agents/skills/`, started with an exact invocation:
+The skill `e2e-preview-screenshot` in `.agents/skills/`, started with `./scripts/e2e` (interactive) or `./scripts/e2e --headless`. The prompt says this is a live demo, to be fast and not thorough, and the skill gives exact commands:
 
-```bash
-./scripts/copilot -p "$(cat prompts/e2e.md)" --model <fixed model> --allow-tool 'shell(agent-browser)' --allow-tool 'shell(gh)'
-```
-
-The prompt says this is a live demo, to be fast and not thorough, and gives the exact steps:
-
-1. Read the PR number from `.factory/run.json` and the preview URL from that PR's comment. Reject a comment whose workflow run id is not this run's.
-2. Open the preview with agent-browser and sign in with the demo account. The password is read from `.env.local` by agent-browser, never typed into the transcript.
-3. Select the demo workspace.
-4. Upload one addon from `fixtures/party-hat.png`, kind `item`, name `PartyHat`.
-5. Type the exact prompt `@Andre wearing @PartyHat on stage at GitHub Universe` in the composer, with both tags resolved.
-6. Take exactly one screenshot of the composer to `screenshots/<run-id>.png` and stop.
-7. Confirm the addon row exists on the preview branch with the Neon MCP `run_sql` tool.
+1. `./scripts/factory-preview` prints the PR number, the preview URL (from the Vercel deployment tagged with that PR), and the preview branch id.
+2. One agent-browser block signs in with the demo account from the environment, adds `PartyHat` from `fixtures/party-hat.png` unless it exists, types `@Andre wearing @PartyHat on stage at GitHub Universe`, and takes one screenshot.
+3. The Neon MCP `run_sql` tool, with exact arguments, confirms the `PartyHat` row on the preview branch.
+4. Only then `./scripts/upload-screenshot` hands the PNG to the dashboard with `FACTORY_TOKEN`.
 
 The dashboard shows only the screenshot named for the current run.
 
@@ -171,7 +148,7 @@ The dashboard shows only the screenshot named for the current run.
 - **Isolation:** the preview's Function, database, Auth, and storage are the preview branch's (branch id in the Function's response metadata, storage key absent from production).
 - **Full rehearsal:** from a clean reset, the sequence runs end to end within 400 seconds, with every step's wall-clock time recorded, including runner queueing, installs, provisioning, and deployment readiness. Three rehearsals.
 - **Reset:** run twice in a row, midway through a deployment, and after a forced failure. Each leaves no live resources from that run and keeps the fallback intact.
-- **Fallback:** switching at the 4:30 deadline and on a forced failure, both shown on screen.
+- **Fallback:** switching three minutes after the PR opens and on a forced failure, both shown on screen.
 - **Copilot:** credits and duration per e2e run recorded, and the screenshot contains no credentials.
 - **Dashboard:** screenshots at 1920×1080 and 1280×720 reviewed for every board state.
 

@@ -51,6 +51,7 @@ export function Factory() {
   const inflight = useRef<{ index: number; promise: Promise<void> } | null>(null);
   const doneActions = useRef(new Set<number>());
   const screenshotLoaded = useRef(false);
+  const fallbackRequested = useRef<string | null>(null);
   const stateRef = useRef<FactoryState | null>(null);
   const resumed = useRef(false);
 
@@ -162,7 +163,8 @@ export function Factory() {
     if (!state?.run || state.run.fallback || !state.fallbackPr || !beat || beat.kind !== 'wait' || beat.until !== 'preview-ready') return;
     const late = state.run.prOpenedAt !== null && Date.now() - Date.parse(state.run.prOpenedAt) > FACTORY.fallbackAfterMs;
     const failed = previewFailed(state);
-    if (!late && !failed) return;
+    if ((!late && !failed) || fallbackRequested.current === state.run.id) return;
+    fallbackRequested.current = state.run.id;
     const message = failed
       ? `The live preview failed. Switched to the prepared PR #${state.fallbackPr}.`
       : `The live preview is running late. Switched to the prepared PR #${state.fallbackPr}.`;
@@ -171,7 +173,10 @@ export function Factory() {
         setNotice(message);
         return refresh();
       })
-      .catch((e: unknown) => setError(`Could not switch to the prepared PR: ${e instanceof Error ? e.message : String(e)}`));
+      .catch((e: unknown) => {
+        fallbackRequested.current = null;
+        setError(`Could not switch to the prepared PR: ${e instanceof Error ? e.message : String(e)}`);
+      });
   }, [state, beat, refresh]);
 
   async function startRun() {
