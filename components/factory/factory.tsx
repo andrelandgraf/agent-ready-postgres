@@ -48,7 +48,7 @@ export function Factory() {
   const [locked, setLocked] = useState(false);
   const [connection, setConnection] = useState<string | null>(null);
   const pausedUntil = useRef(0);
-  const inflight = useRef<Promise<unknown> | null>(null);
+  const inflight = useRef<{ index: number; promise: Promise<void> } | null>(null);
   const doneActions = useRef(new Set<number>());
   const screenshotLoaded = useRef(false);
   const stateRef = useRef<FactoryState | null>(null);
@@ -117,20 +117,26 @@ export function Factory() {
         return;
       }
       const index = beatIndex;
-      const request = post(beat.action);
-      inflight.current = request;
-      request
-        .then(() => {
+      let pending = inflight.current;
+      if (!pending || pending.index !== index) {
+        const promise = post(beat.action).then(() => {
           doneActions.current.add(index);
-          return refresh();
-        })
+        });
+        const created = { index, promise };
+        pending = created;
+        inflight.current = created;
+        promise
+          .finally(() => {
+            if (inflight.current === created) inflight.current = null;
+          })
+          .catch(() => undefined);
+      }
+      pending.promise
+        .then(() => refresh())
         .then((fresh) => {
           if (fresh) next();
         })
-        .catch((e: unknown) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
-        .finally(() => {
-          if (inflight.current === request) inflight.current = null;
-        });
+        .catch((e: unknown) => !cancelled && setError(e instanceof Error ? e.message : String(e)));
       return () => {
         cancelled = true;
       };
@@ -179,7 +185,7 @@ export function Factory() {
     setBusy(true);
     setBeatIndex(-1);
     try {
-      await inflight.current?.catch(() => undefined);
+      await inflight.current?.promise.catch(() => undefined);
       doneActions.current.clear();
       screenshotLoaded.current = false;
       await post('reset');
