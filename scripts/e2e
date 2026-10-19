@@ -10,6 +10,7 @@ prompt='Use the e2e-preview-screenshot skill to test the addons preview. This is
 model="${E2E_MODEL:-claude-sonnet-5}"
 
 if [[ "${1:-}" == "--headless" ]]; then
-  exec "$root/scripts/copilot" -p "$prompt" --allow-all-tools --model "$model"
+  # Prompt mode loads .github/mcp.json only from a trusted folder or with this opt-in.
+  COPILOT_ALLOW_ALL=true exec "$root/scripts/copilot" -p "$prompt" --allow-all-tools --model "$model"
 fi
 exec "$root/scripts/copilot" -i "$prompt" --allow-all-tools --model "$model"
