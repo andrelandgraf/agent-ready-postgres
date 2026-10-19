@@ -7,8 +7,6 @@
         "Authorization": "Bearer ${NEON_API_KEY}"
       },
       "tools": [
-        "list_projects",
-        "describe_project",
         "list_branches",
         "get_default_branch",
         "create_branch",

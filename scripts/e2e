@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# The E2E tester step of the demo: Copilot CLI tests the preview the Software Factory shows.
+# ./scripts/e2e            interactive, for the stage
+# ./scripts/e2e --headless exits when done, for rehearsal automation
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+mkdir -p "$root/screenshots"
+prompt='Use the e2e-preview-screenshot skill to test the addons preview. This is a live demo: be fast, not thorough.'
+model="${E2E_MODEL:-claude-sonnet-5}"
+
+if [[ "${1:-}" == "--headless" ]]; then
+  exec "$root/scripts/copilot" -p "$prompt" --allow-all-tools --model "$model"
+fi
+exec "$root/scripts/copilot" -i "$prompt" --allow-all-tools --model "$model"
