@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Starts Copilot CLI with this repo's Neon credentials and auto-update off, so the CLI version stays fixed during the talk.
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ ! -f "$root/.env.local" ]]; then
+  echo "Missing $root/.env.local. Copy .env.example and set NEON_API_KEY." >&2
+  exit 1
+fi
+
+set -a
+source "$root/.env.local"
+set +a
+
+if [[ -z "${NEON_API_KEY:-}" ]]; then
+  echo "NEON_API_KEY is empty in $root/.env.local." >&2
+  exit 1
+fi
+
+cd "$root"
+exec copilot --no-auto-update "$@"
