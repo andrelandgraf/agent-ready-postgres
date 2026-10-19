@@ -2,40 +2,62 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { ScanSearch, Terminal } from 'lucide-react';
+import { RotateCcw, ScanSearch, Terminal } from 'lucide-react';
 import type { Beat } from '@/lib/factory/sequence';
 import type { Run } from '@/lib/factory/runs';
 import { apiFetch } from './password';
 
-function useScreenshot(run: Run | null): string | null {
-  const [loaded, setLoaded] = useState<{ key: string; url: string } | null>(null);
+type Loaded = { key: string; url: string } | { key: string; failed: string };
+
+function useScreenshot(run: Run | null, attempt: number): Loaded | null {
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
   const runId = run?.id ?? null;
-  const key = run?.screenshotAt ? `${run.id}:${run.screenshotAt}` : null;
+  const key = run?.screenshotAt ? `${run.id}:${run.screenshotAt}:${attempt}` : null;
 
   useEffect(() => {
     if (!key || !runId) return;
     let url: string | null = null;
     let cancelled = false;
     apiFetch(`/api/screenshot/${runId}`)
-      .then((res) => (res.ok ? res.blob() : null))
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
       .then((blob) => {
-        if (cancelled || !blob) return;
+        if (cancelled) return;
         url = URL.createObjectURL(blob);
         setLoaded({ key, url });
       })
-      .catch((error: unknown) => console.error('[screenshot]', error));
+      .catch((error: unknown) => {
+        if (!cancelled) setLoaded({ key, failed: error instanceof Error ? error.message : String(error) });
+      });
     return () => {
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
   }, [key, runId]);
 
-  return loaded && loaded.key === key ? loaded.url : null;
+  return loaded && loaded.key === key ? loaded : null;
 }
 
-export function ScreenshotPanel({ run, beat }: { run: Run | null; beat: Beat | null }) {
+export function ScreenshotPanel({
+  run,
+  beat,
+  onLoaded,
+}: {
+  run: Run | null;
+  beat: Beat | null;
+  onLoaded: (loaded: boolean) => void;
+}) {
+  const [attempt, setAttempt] = useState(0);
   const waiting = beat?.kind === 'wait' && beat.until === 'screenshot';
-  const url = useScreenshot(run);
+  const loaded = useScreenshot(run, attempt);
+  const url = loaded && 'url' in loaded ? loaded.url : null;
+
+  useEffect(() => {
+    onLoaded(url !== null);
+  }, [url, onLoaded]);
+
   return (
     <section className="rounded-2xl border border-border/60 bg-card/60 p-4" data-testid="screenshot-panel">
       <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
@@ -53,6 +75,13 @@ export function ScreenshotPanel({ run, beat }: { run: Run | null; beat: Beat | n
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={url} alt="E2E agent screenshot of the addons feature" className="w-full" />
         </motion.a>
+      ) : loaded && 'failed' in loaded ? (
+        <div role="alert" className="flex items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+          The screenshot was uploaded but did not load ({loaded.failed}).
+          <button type="button" onClick={() => setAttempt((a) => a + 1)} className="inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline">
+            <RotateCcw className="size-3" /> Retry
+          </button>
+        </div>
       ) : waiting ? (
         <div className="rounded-lg border border-dashed border-sky-400/40 bg-sky-400/5 p-4 text-xs text-sky-100">
           <div className="mb-1.5 flex items-center gap-1.5 font-medium">

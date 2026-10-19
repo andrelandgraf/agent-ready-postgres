@@ -49,6 +49,8 @@ export function Factory() {
   const [connection, setConnection] = useState<string | null>(null);
   const pausedUntil = useRef(0);
   const inflight = useRef<Promise<unknown> | null>(null);
+  const doneActions = useRef(new Set<number>());
+  const screenshotLoaded = useRef(false);
   const stateRef = useRef<FactoryState | null>(null);
   const resumed = useRef(false);
 
@@ -99,7 +101,7 @@ export function Factory() {
   const beat: Beat | null = beatIndex >= 0 ? SCRIPT[beatIndex] : null;
 
   useEffect(() => {
-    if (!beat || error || busy) return;
+    if (!beat || error || busy || connection) return;
     let cancelled = false;
     const next = () => !cancelled && setBeatIndex((i) => Math.min(i + 1, SCRIPT.length - 1));
     if (beat.kind === 'timed') {
@@ -110,11 +112,21 @@ export function Factory() {
       };
     }
     if (beat.kind === 'action') {
+      if (doneActions.current.has(beatIndex)) {
+        next();
+        return;
+      }
+      const index = beatIndex;
       const request = post(beat.action);
       inflight.current = request;
       request
-        .then(() => refresh())
-        .then(next)
+        .then(() => {
+          doneActions.current.add(index);
+          return refresh();
+        })
+        .then((fresh) => {
+          if (fresh) next();
+        })
         .catch((e: unknown) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
         .finally(() => {
           if (inflight.current === request) inflight.current = null;
@@ -127,7 +139,8 @@ export function Factory() {
       const id = setInterval(() => {
         const current = stateRef.current;
         if (!current) return;
-        if (waitSatisfied(beat.until, current)) {
+        const satisfied = waitSatisfied(beat.until, current) && (beat.until !== 'screenshot' || screenshotLoaded.current);
+        if (satisfied) {
           clearInterval(id);
           next();
         }
@@ -137,7 +150,7 @@ export function Factory() {
         clearInterval(id);
       };
     }
-  }, [beat, beatIndex, error, busy, refresh]);
+  }, [beat, beatIndex, error, busy, connection, refresh]);
 
   useEffect(() => {
     if (!state?.run || state.run.fallback || !state.fallbackPr || !beat || beat.kind !== 'wait' || beat.until !== 'preview-ready') return;
@@ -165,6 +178,8 @@ export function Factory() {
   async function resetRun() {
     setBusy(true);
     setBeatIndex(-1);
+    doneActions.current.clear();
+    screenshotLoaded.current = false;
     try {
       await inflight.current?.catch(() => undefined);
       await post('reset');
@@ -210,7 +225,13 @@ export function Factory() {
         <div className="flex min-h-0 flex-col gap-4 overflow-y-auto">
           <BranchesPanel branches={state?.branches ?? []} />
           <PrPanel state={state} />
-          <ScreenshotPanel run={state?.run ?? null} beat={beat} />
+          <ScreenshotPanel
+            run={state?.run ?? null}
+            beat={beat}
+            onLoaded={(loaded) => {
+              screenshotLoaded.current = loaded;
+            }}
+          />
         </div>
       </main>
     </div>

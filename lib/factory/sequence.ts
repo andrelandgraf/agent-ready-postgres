@@ -69,6 +69,10 @@ export function resumeIndex(state: FactoryState): number {
   if (run.prNumber || run.fallback) {
     return previewReady(state) ? find((b) => b.kind === 'wait' && b.until === 'screenshot') : find((b) => b.kind === 'wait' && b.until === 'preview-ready');
   }
-  if (run.devBranchId) return find((b) => b.kind === 'timed' && b.status.startsWith('Writing migration'));
+  if (run.devBranchId) {
+    return waitSatisfied('dev-branch-ready', state)
+      ? find((b) => b.kind === 'timed' && b.status.startsWith('Writing migration'))
+      : find((b) => b.kind === 'wait' && b.until === 'dev-branch-ready');
+  }
   return find((b) => b.kind === 'action' && b.action === 'dev-branch');
 }
