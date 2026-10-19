@@ -1,9 +1,9 @@
 # agent-ready-postgres
 
-Demo app for the GitHub Universe 2026 talk "Make your Postgres agent-ready". Copilot CLI makes database changes here on Neon branches.
+The Software Factory: the demo dashboard for the GitHub Universe 2026 talk "Make your Postgres agent-ready". It builds the addons feature of vibecastly (`andrelandgraf/vibecastly`) on Neon branches.
 
-- Database changes follow the `database-changes` skill in `.agents/skills/`. Never write to the production branch.
-- The Neon MCP server is configured in `.github/mcp.json`. It is the only MCP server this repo uses.
-- Start Copilot CLI with `./scripts/copilot`, not `copilot`.
+- The E2E tester step follows the `e2e-preview-screenshot` skill; database changes follow `database-changes`. Never write to vibecastly's production branch.
+- The Neon MCP server in `.github/mcp.json` is the only MCP server this repo uses. Its key reaches only the vibecastly project, `summer-credit-62081215`.
+- Start Copilot CLI with `./scripts/copilot` or `./scripts/e2e`, not `copilot`.
 
-Building this repo is done outside Copilot CLI; see `CONTRIBUTING.md`.
+Building and changing this repo happens outside Copilot CLI; see `CONTRIBUTING.md`.
