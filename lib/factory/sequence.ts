@@ -23,16 +23,16 @@ export const AGENTS: Record<AgentId, { name: string; role: string }> = {
 
 // Timed beats are narration; every action and wait is a real event.
 export const SCRIPT: Beat[] = [
-  { column: 'todo', agents: ['builder'], active: 'builder', status: 'Picked up by Builder', kind: 'timed', ms: 1500 },
+  { column: 'todo', agents: ['builder'], active: 'builder', status: 'Picked up by Builder', kind: 'timed', ms: 2500 },
   { column: 'todo', agents: ['builder'], active: 'builder', status: 'Booting sandbox', kind: 'action', action: 'start' },
-  { column: 'todo', agents: ['builder'], active: 'builder', status: 'Booting sandbox', kind: 'timed', ms: 2000 },
+  { column: 'todo', agents: ['builder'], active: 'builder', status: 'Booting sandbox', kind: 'timed', ms: 3000 },
   { column: 'progress', agents: ['builder'], active: 'builder', status: 'Branching production into dev/addons', kind: 'action', action: 'dev-branch' },
   { column: 'progress', agents: ['builder'], active: 'builder', status: 'Branching production into dev/addons', kind: 'wait', until: 'dev-branch-ready' },
-  { column: 'progress', agents: ['builder'], active: 'builder', status: 'Writing migration 0001_addons', kind: 'timed', ms: 2500 },
-  { column: 'progress', agents: ['builder'], active: 'builder', status: 'Running the migration on dev/addons', kind: 'timed', ms: 2500 },
-  { column: 'progress', agents: ['builder'], active: 'builder', status: 'Tests pass against production data', kind: 'timed', ms: 1800 },
-  { column: 'review', agents: ['builder', 'security'], active: 'security', status: 'Reviewing the diff', kind: 'timed', ms: 3000 },
-  { column: 'review', agents: ['builder', 'security'], active: 'security', status: 'No findings', kind: 'timed', ms: 1200 },
+  { column: 'progress', agents: ['builder'], active: 'builder', status: 'Writing migration 0001_addons', kind: 'timed', ms: 6000 },
+  { column: 'progress', agents: ['builder'], active: 'builder', status: 'Running the migration on dev/addons', kind: 'timed', ms: 6000 },
+  { column: 'progress', agents: ['builder'], active: 'builder', status: 'Tests pass against production data', kind: 'timed', ms: 5000 },
+  { column: 'review', agents: ['builder', 'security'], active: 'security', status: 'Reviewing the diff', kind: 'timed', ms: 5000 },
+  { column: 'review', agents: ['builder', 'security'], active: 'security', status: 'No findings', kind: 'timed', ms: 2500 },
   { column: 'review', agents: ['builder', 'security'], active: 'builder', status: 'Opening the pull request', kind: 'action', action: 'pr' },
   { column: 'review', agents: ['builder', 'security'], active: 'builder', status: 'Preview environment building', kind: 'wait', until: 'preview-ready' },
   { column: 'review', agents: ['builder', 'security', 'e2e'], active: 'e2e', status: 'Testing the preview', kind: 'wait', until: 'screenshot' },
