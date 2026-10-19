@@ -41,6 +41,6 @@ This runs live on stage. Be fast, not thorough. Run the three commands below in 
    curl -s -f -X POST "$FACTORY_URL/api/screenshot" -H "authorization: Bearer $FACTORY_TOKEN" --data-binary @"$ROOT/screenshots/addons.png"
    ```
 
-3. Confirm the addon is in the preview branch's database with the Neon MCP `run_sql` tool: project `summer-credit-62081215`, the branch id from step 1, database `neondb`, SQL `select name, kind from addons order by created_at desc limit 3`.
+3. Confirm the addon is in the preview branch's database with the `run_sql` tool of the `neon` MCP server. Do not use the `neon` CLI, `psql`, or a connection string for this: project `summer-credit-62081215`, the branch id from step 1, database `neondb`, SQL `select name, kind from addons order by created_at desc limit 3`.
 
 Then reply in at most three lines: the PR number, that the screenshot was uploaded, and the rows `run_sql` returned. Do not generate an image.

@@ -18,5 +18,8 @@ if [[ -z "${NEON_API_KEY:-}" ]]; then
   exit 1
 fi
 
+# Copilot CLI signs in with GITHUB_TOKEN when it is set; the dashboard's token has no Copilot access.
+unset GITHUB_TOKEN GH_TOKEN
+
 cd "$root"
 exec copilot --no-auto-update "$@"
