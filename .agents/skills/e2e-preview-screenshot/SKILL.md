@@ -5,17 +5,17 @@ description: Test the vibecastly addons preview from the Software Factory and ca
 
 # E2E preview screenshot
 
-This runs live on stage. Be fast, not thorough. Run the three commands below in order, each as one shell command exactly as written. Do not split them, explore the repo, or inspect the page unless a command fails. All credentials are already in the environment; never print them.
+This runs live on stage. Be fast, not thorough. Run the steps below in order, each shell command as one command exactly as written. Do not split them, explore the repo, or inspect the page unless a command fails. All credentials are already in the environment; never print them.
 
 1. Read the preview the dashboard is showing:
 
    ```bash
-   curl -s -H "authorization: Bearer $FACTORY_PASSWORD" "$FACTORY_URL/api/state" | jq -r '.pr.number, .pr.previewUrl, ([.branches[] | select(.name == ("preview/pr-" + (.pr.number|tostring)))][0].id)'
+   ./scripts/factory-preview
    ```
 
-   It prints the PR number, the preview URL, and the preview branch id. Stop and report if the URL is `null`.
+   It prints the PR number, the preview URL, and the preview branch id. Stop and report if any of them is `null`.
 
-2. Sign in, add the party hat, type the prompt, screenshot, and upload. Replace `<url>` with the preview URL:
+2. Sign in, add the party hat, type the prompt, and take the screenshot. Replace `<url>` with the preview URL:
 
    ```bash
    set -e
@@ -38,9 +38,20 @@ This runs live on stage. Be fast, not thorough. Run the three commands below in 
    mkdir -p "$ROOT/screenshots"
    agent-browser screenshot "$ROOT/screenshots/addons.png"
    agent-browser close
-   curl -s -f -X POST "$FACTORY_URL/api/screenshot" -H "authorization: Bearer $FACTORY_TOKEN" --data-binary @"$ROOT/screenshots/addons.png"
    ```
 
-3. Confirm the addon is in the preview branch's database with the `run_sql` tool of the `neon` MCP server. Do not use the `neon` CLI, `psql`, or a connection string for this: project `summer-credit-62081215`, the branch id from step 1, database `neondb`, SQL `select name, kind from addons order by created_at desc limit 3`.
+3. Confirm the addon is in the preview branch's database with the `run_sql` tool of the `neon` MCP server. Do not use the `neon` CLI, `psql`, or a connection string. Call it once with exactly these arguments, putting the branch id from step 1 in `branch_id`:
 
-Then reply in at most three lines: the PR number, that the screenshot was uploaded, and the rows `run_sql` returned. Do not generate an image.
+   ```json
+   {"project_id": "summer-credit-62081215", "branch_id": "<branch id>", "database_name": "neondb", "sql": "select name, kind from addons order by created_at desc limit 3"}
+   ```
+
+   Stop and report if no `PartyHat` row comes back.
+
+4. Only after step 3 found the row, hand the screenshot to the dashboard:
+
+   ```bash
+   ./scripts/upload-screenshot screenshots/addons.png
+   ```
+
+Then reply in at most three lines: the PR number, the rows `run_sql` returned, and that the screenshot was uploaded. Do not generate an image.

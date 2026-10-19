@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Prints the PR number, preview URL, and preview branch id the Software Factory is showing.
+set -euo pipefail
+curl -s -f -H "authorization: Bearer $FACTORY_PASSWORD" "$FACTORY_URL/api/state" \
+  | jq -r '.pr.number as $n | $n, .pr.previewUrl, ([.branches[] | select(.name == ("preview/pr-" + ($n|tostring)))][0].id)'

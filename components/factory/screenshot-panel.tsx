@@ -9,13 +9,14 @@ import { apiFetch } from './password';
 
 function useScreenshot(run: Run | null): string | null {
   const [loaded, setLoaded] = useState<{ key: string; url: string } | null>(null);
+  const runId = run?.id ?? null;
   const key = run?.screenshotAt ? `${run.id}:${run.screenshotAt}` : null;
 
   useEffect(() => {
-    if (!key || !run) return;
+    if (!key || !runId) return;
     let url: string | null = null;
     let cancelled = false;
-    apiFetch(`/api/screenshot/${run.id}`)
+    apiFetch(`/api/screenshot/${runId}`)
       .then((res) => (res.ok ? res.blob() : null))
       .then((blob) => {
         if (cancelled || !blob) return;
@@ -27,7 +28,7 @@ function useScreenshot(run: Run | null): string | null {
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [key, run]);
+  }, [key, runId]);
 
   return loaded && loaded.key === key ? loaded.url : null;
 }

@@ -1,9 +1,18 @@
 import { FACTORY } from './config';
+import { previewUrl } from './vercel';
 import { requireEnv } from '@/lib/env';
 
 const REPO = `${FACTORY.repo.owner}/${FACTORY.repo.name}`;
-const PREVIEW_MARKER = '<!-- factory-preview -->';
 const SCHEMA_DIFF_MARKER = '<!--- [schema diff GitHub action comment identifier] -->';
+const WORKFLOW_BOT = 'github-actions[bot]';
+
+export class RateLimited extends Error {
+  readonly retryAt: string;
+  constructor(retryAt: string) {
+    super(`GitHub rate limit reached; it resets at ${retryAt}`);
+    this.retryAt = retryAt;
+  }
+}
 
 export type WorkflowStep = { name: string; status: string; conclusion: string | null; startedAt: string | null; completedAt: string | null };
 
@@ -37,12 +46,16 @@ async function gh<T>(method: string, path: string, body?: unknown): Promise<T> {
     body: body ? JSON.stringify(body) : undefined,
     cache: 'no-store',
   });
+  if ((res.status === 403 || res.status === 429) && res.headers.get('x-ratelimit-remaining') === '0') {
+    const reset = Number(res.headers.get('x-ratelimit-reset'));
+    throw new RateLimited(new Date(Number.isFinite(reset) ? reset * 1000 : Date.now() + 60_000).toISOString());
+  }
   if (!res.ok) throw new Error(`GitHub ${method} ${path} → ${res.status}: ${(await res.text()).slice(0, 300)}`);
   return res.status === 204 || res.status === 202 ? (null as T) : ((await res.json()) as T);
 }
 
 type ApiPull = { number: number; html_url: string; title: string; state: 'open' | 'closed'; head: { sha: string; ref: string } };
-type ApiComment = { body: string; html_url: string };
+type ApiComment = { body: string; html_url: string; user: { login: string } | null };
 type ApiRun = {
   id: number;
   html_url: string;
@@ -121,16 +134,6 @@ export async function cancelWorkflows(number: number): Promise<void> {
   }
 }
 
-export async function previewUrlFor(number: number): Promise<string | null> {
-  const comments = await gh<ApiComment[]>('GET', `/repos/${REPO}/issues/${number}/comments?per_page=100`);
-  return parsePreviewUrl(comments);
-}
-
-function parsePreviewUrl(comments: ApiComment[]): string | null {
-  const body = comments.find((c) => c.body.startsWith(PREVIEW_MARKER))?.body;
-  return body?.match(/\| App \| (https:\/\/\S+) \|/)?.[1] ?? null;
-}
-
 export async function pullRequestState(number: number): Promise<PullRequestState> {
   const [pr, comments] = await Promise.all([
     gh<ApiPull>('GET', `/repos/${REPO}/pulls/${number}`),
@@ -158,7 +161,8 @@ export async function pullRequestState(number: number): Promise<PullRequestState
     state: pr.state,
     headSha: pr.head.sha,
     workflow,
-    previewUrl: parsePreviewUrl(comments),
-    schemaDiffUrl: comments.find((c) => c.body.includes(SCHEMA_DIFF_MARKER))?.html_url ?? null,
+    previewUrl: await previewUrl(pr.number),
+    schemaDiffUrl:
+      comments.find((c) => c.user?.login === WORKFLOW_BOT && c.body.includes(SCHEMA_DIFF_MARKER))?.html_url ?? null,
   };
 }

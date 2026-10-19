@@ -46,26 +46,38 @@ export function Factory() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
+  const [connection, setConnection] = useState<string | null>(null);
+  const pausedUntil = useRef(0);
+  const inflight = useRef<Promise<unknown> | null>(null);
   const stateRef = useRef<FactoryState | null>(null);
   const resumed = useRef(false);
 
   const refresh = useCallback(async () => {
+    if (Date.now() < pausedUntil.current) return null;
     let res: Response;
+    let body: unknown;
     try {
       res = await apiFetch('/api/state');
+      body = await res.json();
     } catch (e) {
       if (e instanceof Unauthorized) {
         forgetPassword();
         setLocked(true);
         return null;
       }
-      throw e;
-    }
-    const body: unknown = await res.json();
-    if (!res.ok || !isFactoryState(body)) {
-      setError(typeof body === 'object' && body !== null && 'error' in body ? String(body.error) : 'State failed');
+      setConnection(`Lost the dashboard API (${e instanceof Error ? e.message : String(e)}). Retrying; nothing advances until it is back.`);
       return null;
     }
+    if (res.status === 429 && typeof body === 'object' && body !== null && 'retryAt' in body && typeof body.retryAt === 'string') {
+      pausedUntil.current = Date.parse(body.retryAt);
+      setConnection(`GitHub rate limit reached. Polling pauses until ${new Date(pausedUntil.current).toLocaleTimeString()}.`);
+      return null;
+    }
+    if (!res.ok || !isFactoryState(body)) {
+      setConnection(typeof body === 'object' && body !== null && 'error' in body ? String(body.error) : `State failed (${res.status})`);
+      return null;
+    }
+    setConnection(null);
     stateRef.current = body;
     setState(body);
     if (!resumed.current) {
@@ -86,9 +98,8 @@ export function Factory() {
 
   const beat: Beat | null = beatIndex >= 0 ? SCRIPT[beatIndex] : null;
 
-  // Advance the script. Timed beats wait; actions call the server; waits watch polled state.
   useEffect(() => {
-    if (!beat || error) return;
+    if (!beat || error || busy) return;
     let cancelled = false;
     const next = () => !cancelled && setBeatIndex((i) => Math.min(i + 1, SCRIPT.length - 1));
     if (beat.kind === 'timed') {
@@ -99,10 +110,15 @@ export function Factory() {
       };
     }
     if (beat.kind === 'action') {
-      post(beat.action)
+      const request = post(beat.action);
+      inflight.current = request;
+      request
         .then(() => refresh())
         .then(next)
-        .catch((e: unknown) => !cancelled && setError(e instanceof Error ? e.message : String(e)));
+        .catch((e: unknown) => !cancelled && setError(e instanceof Error ? e.message : String(e)))
+        .finally(() => {
+          if (inflight.current === request) inflight.current = null;
+        });
       return () => {
         cancelled = true;
       };
@@ -121,9 +137,8 @@ export function Factory() {
         clearInterval(id);
       };
     }
-  }, [beat, beatIndex, error, refresh]);
+  }, [beat, beatIndex, error, busy, refresh]);
 
-  // Switch to the prepared PR when the live preview is late or failed.
   useEffect(() => {
     if (!state?.run || state.run.fallback || !state.fallbackPr || !beat || beat.kind !== 'wait' || beat.until !== 'preview-ready') return;
     const late = state.run.prOpenedAt !== null && Date.now() - Date.parse(state.run.prOpenedAt) > FACTORY.fallbackAfterMs;
@@ -132,10 +147,12 @@ export function Factory() {
     const message = failed
       ? `The live preview failed. Switched to the prepared PR #${state.fallbackPr}.`
       : `The live preview is running late. Switched to the prepared PR #${state.fallbackPr}.`;
-    void post('fallback').then(() => {
-      setNotice(message);
-      return refresh();
-    });
+    post('fallback')
+      .then(() => {
+        setNotice(message);
+        return refresh();
+      })
+      .catch((e: unknown) => setError(`Could not switch to the prepared PR: ${e instanceof Error ? e.message : String(e)}`));
   }, [state, beat, refresh]);
 
   async function startRun() {
@@ -147,10 +164,11 @@ export function Factory() {
 
   async function resetRun() {
     setBusy(true);
-    setError(null);
+    setBeatIndex(-1);
     try {
+      await inflight.current?.catch(() => undefined);
       await post('reset');
-      setBeatIndex(-1);
+      setError(null);
       setNotice(null);
       await refresh();
     } catch (e) {
@@ -174,6 +192,11 @@ export function Factory() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       <Header state={state} beat={beat} busy={busy} onReset={resetRun} />
+      {connection && (
+        <div role="alert" className="mx-6 mt-3 rounded-lg border border-sky-400/40 bg-sky-400/10 px-4 py-2 text-sm text-sky-100">
+          {connection}
+        </div>
+      )}
       {(error || notice) && (
         <div
           role="status"

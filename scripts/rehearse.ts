@@ -26,21 +26,21 @@ async function until(name: string, check: () => Promise<boolean>, timeoutMs: num
   mark(name);
 }
 
+// Only clean up a run this invocation started; another rehearsal's run is not ours to reset.
+await start();
+mark('run started');
 try {
-  await start();
-  mark('run started');
   const devId = await createDev();
   await until('dev branch ready', async () => (await listBranches()).some((b) => b.id === devId && b.state === 'ready'), 60_000);
   const pr = await openPr();
   mark(`PR #${pr} opened`);
   await until('preview branch created', async () => (await listBranches()).some((b) => b.name === `preview/pr-${pr}`), 180_000);
-  let conclusion: string | null = null;
   await until('preview workflow completed', async () => {
     const state = await pullRequestState(pr);
-    conclusion = state.workflow?.status === 'completed' ? state.workflow.conclusion : null;
-    return conclusion !== null && state.previewUrl !== null;
+    if (state.workflow?.status !== 'completed') return false;
+    if (state.workflow.conclusion !== 'success') throw new Error(`Preview workflow concluded ${state.workflow.conclusion}: ${state.workflow.url}`);
+    return state.previewUrl !== null;
   }, 600_000);
-  if (conclusion !== 'success') throw new Error(`Preview workflow concluded ${conclusion}`);
   if (withE2e) {
     const result = spawnSync('./scripts/e2e', ['--headless'], { stdio: 'inherit', env: { ...process.env, COPILOT_ALLOW_ALL: 'true' } });
     if (result.status !== 0) throw new Error(`e2e exited ${result.status}`);

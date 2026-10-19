@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Hands the E2E tester's screenshot to the Software Factory's current run.
+set -euo pipefail
+file="${1:?usage: scripts/upload-screenshot <png>}"
+curl -s -f -X POST "$FACTORY_URL/api/screenshot" -H "authorization: Bearer $FACTORY_TOKEN" --data-binary @"$file"
+echo

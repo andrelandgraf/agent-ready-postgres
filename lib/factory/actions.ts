@@ -5,11 +5,10 @@ import {
   closedDemoPullRequests,
   openDemoPullRequests,
   openPullRequest,
-  previewUrlFor,
 } from './github';
 import { createDevBranch, deleteBranch, listBranches } from './neon';
 import { currentRun, endRun, recordEvent, setDevBranch, setFallback, setPr, startRun, type Run } from './runs';
-import { deleteDeployment } from './vercel';
+import { deletePreviewDeployments } from './vercel';
 
 export class FactoryError extends Error {}
 
@@ -66,9 +65,8 @@ export type ResetReport = {
 };
 
 /**
- * Removes everything the demo flow creates: open PRs from the demo head branch (after their
+ * Removes what the demo flow creates: open PRs from the demo head branch (after their
  * workflows stop), the dev branch, and the preview branches and deployments of demo PRs.
- * The fallback PR comes from a different head branch and is never touched.
  */
 export async function reset(): Promise<ResetReport> {
   const report: ResetReport = { closedPrs: [], deletedBranches: [], deletedDeployments: [] };
@@ -77,25 +75,16 @@ export async function reset(): Promise<ResetReport> {
   const open = await openDemoPullRequests();
   for (const number of open) {
     await cancelWorkflows(number);
-    const url = await previewUrlFor(number);
     await closePullRequest(number);
     report.closedPrs.push(number);
-    if (url) {
-      await deleteDeployment(url);
-      report.deletedDeployments.push(url);
-    }
   }
 
   const recentlyClosed = (await closedDemoPullRequests()).slice(0, 5).filter((n) => !open.includes(n));
-  for (const number of recentlyClosed) {
-    const url = await previewUrlFor(number);
-    if (url) {
-      await deleteDeployment(url);
-      report.deletedDeployments.push(url);
-    }
+  const demoPrs = new Set([...open, ...recentlyClosed]);
+  for (const number of demoPrs) {
+    report.deletedDeployments.push(...(await deletePreviewDeployments(number)));
   }
 
-  const demoPrs = new Set([...open, ...recentlyClosed]);
   for (const branch of await listBranches()) {
     const prNumber = branch.name.startsWith(FACTORY.previewBranchPrefix)
       ? Number(branch.name.slice(FACTORY.previewBranchPrefix.length))

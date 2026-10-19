@@ -40,7 +40,7 @@ The preview environment is the riskiest part, so it is proven first on a throwaw
 Settled on Oct 19 with a throwaway branch `preview/proof` (created, inspected, deleted):
 
 - `neon checkout preview/proof --create --project-id summer-credit-62081215` took 7.8 s with neon 8.4.3. It applied `neon.ts` on creation, deploying both Functions (`imagegen`, `report`) to the branch, and wrote 13 variables to `.env.local`: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEON_BRANCH`, `NEON_AUTH_BASE_URL`, `NEON_AUTH_JWKS_URL`, `NEON_FUNCTION_IMAGEGEN_BASE_URL`, `NEON_FUNCTION_REPORT_BASE_URL`, four `AWS_*` storage keys, `NEON_AI_GATEWAY_TOKEN`, `NEON_AI_GATEWAY_BASE_URL`.
-- The branch has its own Neon Auth (JWKS served from the branch endpoint) with production's data: 30 users, 25 organizations, 28 memberships, 38 people. The branch Function answers `401` without a JWT.
+- The branch has its own Neon Auth (JWKS served from the branch endpoint) with production's users, organizations, memberships, and people. The branch Function answers `401` without a JWT.
 - `NEXT_PUBLIC_AGENT_URL` for the preview is the branch's `NEON_FUNCTION_IMAGEGEN_BASE_URL`.
 - Neon does not provide `NEON_AUTH_COOKIE_SECRET`. The workflow generates a random one per preview and masks it.
 - Functions are deployed at branch creation, before the migration. The preview URL is only commented after the migration finishes, so nothing calls the addons routes early. On `synchronize`, checkout of an existing branch does not reapply `neon.ts`, so that path runs `neon deploy` against the branch.
