@@ -42,7 +42,7 @@ try {
     return state.previewUrl !== null;
   }, 600_000);
   if (withE2e) {
-    const result = spawnSync('./scripts/e2e', ['--headless'], { stdio: 'inherit', env: { ...process.env, COPILOT_ALLOW_ALL: 'true' } });
+    const result = spawnSync('./scripts/e2e', ['--headless'], { stdio: 'inherit' });
     if (result.status !== 0) throw new Error(`e2e exited ${result.status}`);
     const run = await currentRun();
     if (!run?.screenshotAt) throw new Error('e2e finished without uploading a screenshot');
