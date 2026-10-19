@@ -5,7 +5,7 @@ export const FACTORY = {
   fallbackLabel: 'demo-fallback',
   devBranchName: 'dev/addons',
   previewBranchPrefix: 'preview/pr-',
-  neon: { projectId: 'summer-credit-62081215', orgId: 'org-summer-dust-66593634' },
+  neon: { projectId: 'odd-block-46739925', orgId: 'org-summer-dust-66593634' },
   vercel: { teamId: 'team_3lnclzRbyCETAcu719mQjKVP', projectId: 'prj_GbWkW4Y9DLl7WEXeXcjQYorFHUZn' },
   pr: {
     title: 'Addons: tag items and background images in prompts',
