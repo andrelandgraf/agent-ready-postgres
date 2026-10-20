@@ -39,17 +39,28 @@ The dictated opening (raw notes below) runs about four minutes. The script below
 
 ### Opening script
 
-What a time to be alive. Agents just rewrote Bun from Zig to Rust, a project that would have taken an engineering team a lot longer than a week. In fact, I've heard the rewrite went faster than writing the blog post that documents it. [VERIFY: source for the blog post comparison]
+What a time to be alive. Agents just rewrote Bun from Zig to Rust: 535,496 lines of Zig, in 11 days. Jarred's own estimate for doing it by hand was "3 engineers with full context on the codebase about a year". The rewrite merged on May 14; the blog post about it came out on July 8, almost two months later.
 
 And math is apparently solved. I'm not smart enough to explain which problems, but OpenAI and Anthropic both published results this summer on problems that had been open for decades.
 
 Agents are doing incredible things and they're doing them at agent speed. That's what I want to talk about today: agent speed and how to bring it to your database.
 
+### Bun quotes
+
+From [Rewriting Bun in Rust](https://bun.sh/blog/bun-in-rust) (Jarred Sumner, July 8, 2026):
+
+- "Fortunately, Bun's own test suite is written in TypeScript which means it doesn't depend on the runtime's programming language."
+- "At first, I didn't expect it to work. A few days in, a high % of the test suite started passing [...] My opinion went from "this is worth trying" to "I'm going to merge this"."
+- "A language-independent test suite with a million assertions, adversarial code review and when something does go wrong, fixing the process that generates the code instead of hand-fixing the code."
+- "By hand, I think this would've taken 3 engineers with full context on the codebase about a year."
+
+Numbers: 535,496 lines of Zig; about 50 Claude Code workflows over 11 days (May 3 to May 14), up to 64 Claudes in parallel; 6,778 commits; 0 tests skipped or deleted; about $165,000 in tokens at API pricing.
+
 ### The oracle
 
 Of course, agents don't pull this off because you prompt "rewrite Bun in Rust" or "solve math". These big projects work because they have really good verification.
 
-Bun has a test suite written in TypeScript, so the Zig and the Rust versions can both run it. Every change runs the tests, the agent fixes what fails and iterates until everything passes. I'd guess the first 98% of the tests needed no human at all. The last mile is where the judgment calls are, and that's where people come back in. But the verification loop gets you through the meaty part.
+Bun has a test suite written in TypeScript, so the Zig and the Rust versions can both run it. In Jarred's words: "Bun's own test suite is written in TypeScript which means it doesn't depend on the runtime's programming language." Every change runs the tests, the agent fixes what fails and iterates until everything passes. "A few days in, a high % of the test suite started passing." The last mile is where the judgment calls are, and that's where people come back in: he monitored the workflows the whole time and only merged once 100% of the test suite passed in CI on every platform. But the verification loop gets you through the meaty part.
 
 Math works the same way with a verification language like Lean. The agent forms a hypothesis and Lean checks it, right or wrong. Agents run those loops in parallel, they run at agent speed and they don't get tired. That's how they get through these feats.
 
