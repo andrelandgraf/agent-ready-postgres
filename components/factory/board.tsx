@@ -15,30 +15,6 @@ const COLUMNS: { id: ColumnId; title: string }[] = [
   { id: 'done', title: 'Done' },
 ];
 
-const BACKLOG: Record<ColumnId, { title: string; tag: string }[]> = {
-  draft: [
-    { title: 'Dark mode for the gallery', tag: 'web' },
-    { title: 'Export a generation as GIF', tag: 'function' },
-  ],
-  todo: [{ title: 'Rate limit per workspace', tag: 'function' }],
-  progress: [],
-  review: [],
-  done: [
-    { title: 'Team workspaces', tag: 'auth' },
-    { title: 'Reference images', tag: 'function' },
-    { title: 'Per-user style memory', tag: 'agent' },
-  ],
-};
-
-function StaticCard({ title, tag }: { title: string; tag: string }) {
-  return (
-    <div className="rounded-xl border border-border/50 bg-card/40 p-3 text-sm text-muted-foreground">
-      <div className="font-medium text-foreground/70">{title}</div>
-      <div className="mt-2 font-mono text-[11px] text-muted-foreground/70">{tag}</div>
-    </div>
-  );
-}
-
 function FeatureCard({ beat, state, draggable }: { beat: Beat | null; state: FactoryState | null; draggable: boolean }) {
   const pr = state?.pr;
   const done = beat?.kind === 'final';
@@ -157,9 +133,6 @@ export function Board({ beat, state, onStart }: { beat: Beat | null; state: Fact
               </div>
               <div className="flex flex-col gap-2.5 overflow-y-auto">
                 {cardColumn === column.id && <FeatureCard beat={beat} state={state} draggable={idle} />}
-                {BACKLOG[column.id].map((card) => (
-                  <StaticCard key={card.title} {...card} />
-                ))}
               </div>
             </div>
           ))}

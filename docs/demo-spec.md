@@ -101,7 +101,7 @@ Credentials:
 Layout, one screen at 1920×1080:
 
 - **Header:** "Software Factory", project name vibecastly, quick links to the GitHub repo, the Neon project, the Vercel project, and production.
-- **Board:** Draft, To do, In progress, In review, Done. "Addons" starts in Draft; the other cards are static set dressing.
+- **Board:** Draft, To do, In progress, In review, Done. "Addons" starts in Draft and is the only card on the board.
 - **Agents:** avatars that move onto a card when assigned, each with a role (Builder, Security reviewer, E2E tester) and a status line with a spinner.
 - **Neon branches:** live list from the Neon API, polled every 2 seconds. New branches animate in, deleted branches animate out. Each row shows name, parent, and age, and links to the branch in the Neon console.
 - **PR panel:** the PR title and link, each check with its live status, the schema diff comment, and the preview URL once commented.
