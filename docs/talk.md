@@ -13,7 +13,7 @@ Talk notes for GitHub Universe 2026, all versions in one place. The current vers
 
 | Version | Date | What changed |
 |---|---|---|
-| [v3](#v3-current) | Oct 20 | Opening rewritten around "agent speed"; the oracle is production; Lakebase intro with the two ways in; Software Factory demo |
+| [v3](#v3-current) | Oct 20 | Opening rewritten around "agent speed"; the oracle is production; Lakebase intro with the two ways in; Software Factory demo; deck with Neon's official architecture diagram |
 | [v2](#v2-html-flow-deck) | Oct 18 | 17-slide HTML flow deck: Bun and math examples, the oracle, Bobby Tables, Lakebase, branching, recovery, Copilot CLI demo |
 | [v1](#v1-session-outline) | Sep 9 | Session outline submitted to GitHub: Bobby Tables hook, architecture, Copilot CLI + GitHub Actions release demo with restore |
 
@@ -22,6 +22,8 @@ Talk notes for GitHub Universe 2026, all versions in one place. The current vers
 Agents ship fast when they can check their work. For operational systems, that check is production. So infra has to run at agent speed: copies of production that are instant, isolated and easy to throw away.
 
 ## v3 (current)
+
+Slides: [talk-deck-v3/index.html](talk-deck-v3/index.html), the v2 deck with the hand-drawn architecture diagram on slide 12 replaced by the official one from [neon.com/docs/introduction/architecture-overview](https://neon.com/docs/introduction/architecture-overview).
 
 ### Run of show
 
