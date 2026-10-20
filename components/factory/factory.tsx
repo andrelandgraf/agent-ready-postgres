@@ -25,6 +25,15 @@ function isFactoryState(value: unknown): value is FactoryState {
   );
 }
 
+// The fallback PR's preview branch stays up between runs; show it only once a
+// run has switched to the fallback.
+function visibleBranches(state: FactoryState | null) {
+  if (!state) return [];
+  if (state.run?.fallback || state.fallbackPr === null) return state.branches;
+  const fallbackBranch = `${FACTORY.previewBranchPrefix}${state.fallbackPr}`;
+  return state.branches.filter((branch) => branch.name !== fallbackBranch);
+}
+
 async function post(action: string, extra: Record<string, unknown> = {}): Promise<unknown> {
   const res = await apiFetch('/api/run', {
     method: 'POST',
@@ -234,7 +243,7 @@ export function Factory() {
       <main className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_420px] gap-5 p-6">
         <Board beat={beat} state={state} onStart={startRun} />
         <div className="flex min-h-0 flex-col gap-4 overflow-y-auto">
-          <BranchesPanel branches={state?.branches ?? []} />
+          <BranchesPanel branches={visibleBranches(state)} />
           <PrPanel state={state} />
           <ScreenshotPanel
             run={state?.run ?? null}
