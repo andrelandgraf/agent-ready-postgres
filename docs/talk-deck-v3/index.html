@@ -336,6 +336,39 @@ Every feature that touches the database:
     </div>
   </div>
 </section>
+<section class="slide" data-title="The CI loop" data-section="Demo" data-dur="45" data-tpl="43 · Two statements"
+  data-notes="Then CI does the same for every pull request. Always create a branch. Always run the migrations, if there are any, against that branch and verify it works: the schema diff lands on the PR. Then boot up a preview environment of the whole stack: Vercel for the UI, and a Neon branch for the backend, with Lakebase Postgres, Auth and Functions on that branch. Every PR gets a working copy of production to review.">
+  <div style="display:grid;grid-template-columns:480px 1fr;gap:64px;align-items:center;height:100%">
+    <div>
+      <div class="eyebrow">The CI loop</div>
+      <h2>Neon + your<br><span class="green">GitHub Actions</span></h2>
+      <p style="font-size:24px;line-height:1.45;color:var(--dim);margin-top:28px">Every pull request gets a preview of the whole stack.</p>
+      <div style="display:grid;gap:14px;margin-top:32px">
+        <div class="card" style="padding-top:16px"><div class="k">UI</div><p style="font-size:22px">Vercel preview deployment</p></div>
+        <div class="card" style="padding-top:16px"><div class="k">Backend</div><p style="font-size:22px">Neon branch: Lakebase Postgres, Auth, Functions</p></div>
+      </div>
+    </div>
+    <div class="agentsmd">
+      <div class="bar"><i></i><i></i><i></i><span style="margin-left:10px">.github/workflows/preview.yml</span></div>
+<pre><span class="h">on: pull_request</span>
+
+steps:
+  - name: <span class="em">Create Neon preview branch</span>
+    run: <span class="c">neon checkout preview/pr-$PR --create</span>
+
+  - name: <span class="em">Run Drizzle migration on the preview branch</span>
+    run: <span class="c">npx drizzle-kit migrate</span>
+
+  - name: <span class="em">Post schema diff</span>
+    uses: <span class="c">neondatabase/schema-diff-action</span>
+
+  - name: <span class="em">Deploy web preview to Vercel</span>
+    run: <span class="c">node scripts/vercel-deploy.mjs</span>
+
+  - name: <span class="em">Comment preview URL</span></pre>
+    </div>
+  </div>
+</section>
 <section class="slide" data-title="Demo" data-section="Demo" data-dur="400" data-tpl="60 · Demo"
   data-notes="6:40 total. Jump cuts are fine: prepared branch, prepared PR, finished runs.
 

@@ -13,7 +13,7 @@ Talk notes for GitHub Universe 2026, all versions in one place. The current vers
 
 | Version | Date | What changed |
 |---|---|---|
-| [v3](#v3-current) | Oct 20 | Opening rewritten around "agent speed"; the oracle is production; Lakebase intro with the two ways in; Software Factory demo; 15-slide deck: one math slide, one oracle loop slide, Neon's official architecture diagram, an AGENTS.md dev loop slide |
+| [v3](#v3-current) | Oct 20 | Opening rewritten around "agent speed"; the oracle is production; Lakebase intro with the two ways in; Software Factory demo; 16-slide deck: one math slide, one oracle loop slide, Neon's official architecture diagram, AGENTS.md dev loop and CI loop slides |
 | [v2](#v2-html-flow-deck) | Oct 18 | 17-slide HTML flow deck: Bun and math examples, the oracle, Bobby Tables, Lakebase, branching, recovery, Copilot CLI demo |
 | [v1](#v1-session-outline) | Sep 9 | Session outline submitted to GitHub: Bobby Tables hook, architecture, Copilot CLI + GitHub Actions release demo with restore |
 
@@ -23,7 +23,7 @@ Agents ship fast when they can check their work. For operational systems, that c
 
 ## v3 (current)
 
-Slides: [talk-deck-v3/index.html](talk-deck-v3/index.html), 15 slides built from the v2 deck: one math slide ("Agents are solving math", OpenAI and Anthropic results in small print) instead of two; one oracle slide (a loop of agent, oracle and "fail → fix and try again" until all checks pass) instead of three; Neon's official architecture diagram from [neon.com/docs/introduction/architecture-overview](https://neon.com/docs/introduction/architecture-overview) on the Lakebase slide; and a dev loop slide before the demo ("Neon Postgres + your Copilot" next to an AGENTS.md: branch, pull env, run against the branch, migrate, verify end to end, diff the schema against production, only then report done).
+Slides: [talk-deck-v3/index.html](talk-deck-v3/index.html), 16 slides built from the v2 deck: one math slide ("Agents are solving math", OpenAI and Anthropic results in small print) instead of two; one oracle slide (a loop of agent, oracle and "fail → fix and try again" until all checks pass) instead of three; Neon's official architecture diagram from [neon.com/docs/introduction/architecture-overview](https://neon.com/docs/introduction/architecture-overview) on the Lakebase slide; and a dev loop slide before the demo ("Neon Postgres + your Copilot" next to an AGENTS.md: branch, pull env, run against the branch, migrate, verify end to end, diff the schema against production, only then report done); and a CI loop slide after it ("Neon + your GitHub Actions": every PR gets a Neon preview branch, the migration, a schema diff and a Vercel preview, next to the demo's real preview.yml steps).
 
 ### Run of show
 
