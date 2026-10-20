@@ -19,6 +19,20 @@ function StepIcon({ step }: { step: WorkflowStep }) {
   return <XCircle className="size-3.5 text-destructive" />;
 }
 
+// The steps that tell the story on stage. Setup and plumbing steps stay in the
+// Actions run and show here only when they fail.
+const KEY_STEPS = new Set([
+  'Create Neon preview branch',
+  'Run Drizzle migration on the preview branch',
+  'Post schema diff',
+  'Deploy web preview to Vercel',
+]);
+
+function shown(step: WorkflowStep): boolean {
+  const failed = step.status === 'completed' && step.conclusion !== 'success' && step.conclusion !== 'skipped';
+  return KEY_STEPS.has(step.name) || failed;
+}
+
 function Link({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border border-border/60 px-2 py-1 text-xs hover:bg-muted/50">
@@ -55,7 +69,7 @@ export function PrPanel({ state }: { state: FactoryState | null }) {
                 <span className="font-mono tabular-nums">{total ?? workflow.status.replace('_', ' ')}</span>
               </div>
               <ul className="space-y-1">
-                {workflow.steps.map((step) => (
+                {workflow.steps.filter(shown).map((step) => (
                   <li key={step.name} className="flex items-center gap-2 text-xs" data-testid="workflow-step">
                     <StepIcon step={step} />
                     <span className={step.conclusion === 'skipped' ? 'text-muted-foreground/50' : ''}>{step.name}</span>
