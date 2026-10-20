@@ -6,6 +6,7 @@ import { CheckCircle2, GitPullRequest, Loader2, GripVertical, Sparkles } from 'l
 import { AGENTS, type Beat, type ColumnId } from '@/lib/factory/sequence';
 import type { FactoryState } from '@/lib/factory/state';
 import { AgentAvatar, agentTextClass } from './agents';
+import { NewCardDialog } from './new-card-dialog';
 
 const COLUMNS: { id: ColumnId; title: string }[] = [
   { id: 'draft', title: 'Draft' },
@@ -130,6 +131,7 @@ export function Board({ beat, state, onStart }: { beat: Beat | null; state: Fact
             >
               <div className="mb-2.5 flex items-center justify-between px-1">
                 <span className="text-xs font-medium text-muted-foreground">{column.title}</span>
+                {column.id === 'draft' && <NewCardDialog />}
               </div>
               <div className="flex flex-col gap-2.5 overflow-y-auto">
                 {cardColumn === column.id && <FeatureCard beat={beat} state={state} draggable={idle} />}
