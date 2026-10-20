@@ -349,7 +349,7 @@ Every feature that touches the database:
       </div>
     </div>
     <div class="agentsmd">
-      <div class="bar"><i></i><i></i><i></i><span style="margin-left:10px">.github/workflows/preview.yml</span></div>
+      <div class="bar"><i></i><i></i><i></i><span style="margin-left:10px">.github/workflows/preview.yml (excerpt)</span></div>
 <pre><span class="h">on: pull_request</span>
 
 steps:
@@ -360,10 +360,10 @@ steps:
     run: <span class="c">npx drizzle-kit migrate</span>
 
   - name: <span class="em">Post schema diff</span>
-    uses: <span class="c">neondatabase/schema-diff-action</span>
+    uses: <span class="c">neondatabase/schema-diff-action@v1.0.1</span>
 
   - name: <span class="em">Deploy web preview to Vercel</span>
-    run: <span class="c">node scripts/vercel-deploy.mjs</span>
+    run: <span class="c">node scripts/vercel-deploy.mjs …</span>
 
   - name: <span class="em">Comment preview URL</span></pre>
     </div>
