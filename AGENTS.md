@@ -5,5 +5,6 @@ The Software Factory: the demo dashboard for the GitHub Universe 2026 talk "Make
 - The E2E tester step follows the `e2e-preview-screenshot` skill; database changes follow `database-changes`. Never write to vibecastly's production branch.
 - The Neon MCP server in `.github/mcp.json` is the only MCP server this repo uses. Its key reaches only the vibecastly project, `odd-block-46739925`.
 - Start Copilot CLI with `./scripts/copilot` or `./scripts/e2e`, not `copilot`.
+- The talk lives in `docs/talk.md`. A change to the talk becomes a new version at the top; past versions stay unchanged below it.
 
 Building and changing this repo happens outside Copilot CLI; see `CONTRIBUTING.md`.
