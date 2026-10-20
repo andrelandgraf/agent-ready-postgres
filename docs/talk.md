@@ -71,20 +71,22 @@ What serverless Postgres gives you is branching: a copy-on-write copy of product
 
 ### Demo: the Software Factory
 
-One live run of the dashboard in this repo. Times are averages from five runs on Oct 19 (seconds from dragging the card).
+One live run of the dashboard in this repo. Times are averages from five runs on Oct 19, counted from dragging the card.
+
+On the board, the Builder and Security reviewer beats (migration, tests, review) are timed narration, and the PR comes from the prepared `feat/addons` branch. The real parts: the `dev/addons` branch, the PR, the preview workflow (preview branch, migration, schema diff, Vercel preview) and the Copilot e2e agent. Say "the agents" for the board, and point at the real artifacts.
 
 | Time | Window | Highlight |
 |---|---|---|
 | 0:00 | Dashboard | One board. Neon has only production. Click + on Draft to show where a card comes from, then close it |
 | 0:04 | Dashboard | Drag Addons into To do. Three agents pick it up |
 | 0:07 | Neon branches panel | Builder branches production. `dev/addons` appears in seconds |
-| 0:10 | Dashboard | Migration and tests run against a full copy of production data |
-| 0:27 | Dashboard | Security reviewer checks the diff |
-| 0:37 | Dashboard, then GitHub | PR opened by the agent. Open the PR, then the Actions run |
+| 0:10 | Dashboard | Migration and tests on `dev/addons` (scripted beat; the real migration runs in the preview workflow) |
+| 0:27 | Dashboard | Security reviewer checks the diff (scripted beat) |
+| 0:37 | Dashboard, then GitHub | PR opened from the prepared `feat/addons` branch. Open the PR, then the Actions run |
 | 0:45 | GitHub Actions | Preview branch from production, Drizzle migration, schema diff, Vercel preview |
 | 1:15 | PR comment | Schema diff: the database change shows up in review |
-| 1:30 | Dashboard | `preview/pr-N` in Neon branches. Infra at agent speed: a branch in seconds, a full preview in about 90 seconds |
-| 2:14 | Dashboard, then terminal | Preview ready. Hand off to Copilot CLI: `./scripts/e2e -i` |
+| 1:30 | Dashboard | `preview/pr-N` in Neon branches. Infra at agent speed: a branch of production in seconds |
+| 2:14 | Dashboard, then terminal | Preview ready, about 100 s after the PR opened. Hand off to Copilot CLI: `./scripts/e2e -i` |
 | 2:20 | Terminal | E2E tester opens the preview, adds the party hat, checks the row over Neon MCP |
 | 3:03 | Dashboard | Screenshot lands. Ready to merge. Production never touched |
 
@@ -112,31 +114,57 @@ Kept verbatim so nothing gets lost.
 
 ## v2: HTML flow deck
 
-Oct 18. A 17-slide HTML deck to feel the flow: [talk-deck-v2/index.html](talk-deck-v2/index.html). Open it in a browser; N shows speaker notes, T a timer, G the overview, R resets. Slides and notes:
+Oct 18. A 17-slide HTML deck to feel the flow, verbatim except one redacted sentence in slide 4's notes: [talk-deck-v2/index.html](talk-deck-v2/index.html). Open it in a browser; N shows speaker notes, T a timer, G the overview, R resets.
 
-1. **Title.** Make your Postgres agent-ready: Branching, isolation, and safer shipping. Andre Landgraf, Staff Developer Advocate, Databricks. *Notes:* Short. Get to the hype fast.
-2. **2026 → 2027.** Programming now runs at agent speed. *Notes:* Start on a high note. Heading into 2027, you can build whatever you want. Programming now runs at agent speed. So does math. Two examples.
-3. **Programming: Bun, rewritten from Zig to Rust.** About 11 days until the full test suite passed; 100% of the test suite passing on all platforms before merge; about $165k in tokens. Sources: bun.sh/blog/bun-in-rust, github.com/oven-sh/bun/pull/30412, claude.com/resources/articles/ai-code-migration. *Notes:* Bun rewrote the whole runtime from Zig to Rust with agents. Merged in May. About 11 days from start to the full test suite passing on every platform. Around 165k dollars in tokens.
-4. **Math: OpenAI.** Ten long-standing open problems, resolved or advanced: 10 results including Erdős problems 183, 146 and 180; about $2k in tokens for all ten; 10/10 formalized as Lean proofs. Sources: openai.com/index/ten-advances-in-mathematics (Aug 1, 2026), github.com/openai/ten-proofs. *Notes:* In August OpenAI published ten results on long-standing open problems: sphere packing, Ramsey numbers, three Erdős problems. All ten together cost about 2,000 dollars in tokens. And every one ships with a Lean certificate.
-5. **Math: Anthropic.** Riemann zeta zeros on the critical line: 41.6% → 67.2% of zeros proven to lie on the critical line; about 60 subagents, thousands of numerical checks, one Lean 4 proof. Sources: anthropic.com/research/riemann-zeta (Aug 10, 2026), github.com/anthropics/zeta-23-lean. *Notes:* Asked to take a real stab at the Riemann hypothesis. It didn't prove it. It did raise the share of zeta zeros proven to sit on the critical line from 41.6 to 67.2 percent. Fun detail: the person prompting it was Jarred Sumner, from the Bun slide.
-6. **How does that succeed?** Smart models. And an oracle. *Notes:* Models are really smart, sure. But it's also about having an oracle: a way to verify.
-7. **The oracle.** Each one had a way to check the answer. Bun: the test suite, written in TypeScript, so any implementation, Zig or Rust, can run it. Math: Lean; every proof step is machine-checked. *Notes:* Great oracle for whether the model succeeded. Every hypothesis can be checked immediately and discarded.
-8. **The oracle loop.** With an oracle, you can run a loop. Or a thousand: agent attempt → oracle → keep, or fail → discard, try again, × 1,000 in parallel. *Notes:* Development keeps moving this way: build the oracle first so you can verify and build fast.
-9. **But agents get things wrong. A lot.** Anthropic, Riemann zeta: 650 ideas, none worked, before the run that found the new bound. Knuth, "Claude's Cycles": "He had to do some restarts when Claude stopped on random errors; then some of the previous search results were lost." Sources: anthropic.com/research/riemann-zeta, cs.stanford.edu/~knuth/papers/claude-cycles.pdf. *Notes:* Agents need environments as close to production as possible, and they need to recover.
-10. **In a database, "wrong" looks like this.** xkcd 327, Robert'); DROP TABLE Students;-- with "your coding agent" written over it. What now? (xkcd.com/327, CC BY-NC 2.5) *Notes:* We all know little Bobby Tables. Now cross out his name: it's your agent that dropped the table. What now?
-11. **Operational systems.** For operational systems, the oracle is production. Instant: a copy of production per attempt, a thousand at once. Isolated: nothing an agent does touches the real thing. Recoverable: every mistake has an undo. Infra has to run at agent speed. Today: the database. *Notes:* Bun had its test suite. Math has Lean. For operational systems, the oracle is the production environment: real schema, real data, real traffic.
-12. **Lakebase Postgres.** Postgres on the lakebase architecture: Postgres computes (production, agent branch, scaled to zero), safekeepers (WAL), pageservers, object storage. Stateless compute, storage keeps the full history. Lakebase Postgres, available via Neon and via Databricks. *Notes:* That's what makes instant, copy-on-write branches possible. Same database via Neon and via Databricks. The demo uses Neon.
-13. **Branching.** One branch per agent loop: production → agent-1 … agent-1000. Copy-on-write: shared history, isolated writes; seconds to create, whatever the size; throw it away when the attempt fails. *Notes:* A branch is a new compute on the same history. No copy. Every agent loop gets its own copy of production: that's the oracle for database changes.
-14. **Recovery.** Any point in history is a restore point: production → backup-before-migration → `DROP TABLE notes;` → restored with `neon branches restore production backup-before-migration`. *Notes:* Take a backup branch before the production change. Agent drops a table: restore production to the backup.
-15. **Demo: Copilot CLI + a branch of production.** 7:20 repo with AGENTS.md database rules and Neon skills; 7:50 agent branches, migrates, verifies against real data, retries; 10:30 merge: backup branch, then production; 12:00 destructive change, then restore. *Notes:* 6:40 total. Jump cuts are fine: prepared branch, prepared PR, finished runs.
-16. **What now?** Agents ship fast when they can check their work. For operational systems, that check is production: instant to copy, isolated, easy to roll back. Infra has to run at agent speed. *Notes:* Programming already runs at agent speed. Infra has to catch up. Ask yourself: where can your agents experiment, and what can you recover after a mistake?
-17. **Thank you.** Demo repo link or QR, @andrelandgraf.
+1. **Slide:** Make your Postgres agent-ready Branching, isolation, and safer shipping photo Andre Landgraf Staff Developer Advocate Databricks
+   **Notes:** Short. Get to the hype fast.
+2. **Slide:** 2026 → 2027 Programming now runs at agent speed.
+   **Notes:** Start on a high note. Heading into 2027, you can build whatever you want. Programming now runs at agent speed. So does math. Two examples.
+3. **Slide:** Programming Bun, rewritten from Zig to Rust ~11 days until the full test suite passed 100% of the test suite passing on all platforms before merge ~$165k in tokens bun.sh/blog/bun-in-rust · github.com/oven-sh/bun/pull/30412 · claude.com/resources/articles/ai-code-migration
+   **Notes:** Bun rewrote the whole runtime from Zig to Rust with agents. Merged in May. About 11 days from start to the full test suite passing on every platform. Around 165k dollars in tokens.
+4. **Slide:** Math · OpenAI Ten long-standing open problems, resolved or advanced 10 results, including Erdős problems 183, 146 and 180 ~$2k in tokens for all ten 10/10 formalized as Lean proofs openai.com/index/ten-advances-in-mathematics (Aug 1, 2026) · github.com/openai/ten-proofs
+   **Notes:** So is math. In August OpenAI published ten results on long-standing open problems: sphere packing, Ramsey numbers, three Erdős problems. [One sentence redacted for this public repo.] All ten together cost about 2,000 dollars in tokens. And every one ships with a Lean certificate.
+5. **Slide:** Math · Anthropic Riemann zeta zeros on the critical line 41.6% → 67.2% of zeros proven to lie on the critical line: the previous record, then Claude's ~60 subagents, thousands of numerical checks, one Lean 4 proof anthropic.com/research/riemann-zeta (Aug 10, 2026) · github.com/anthropics/zeta-23-lean
+   **Notes:** And Anthropic: asked to take a real stab at the Riemann hypothesis. It didn't prove it. It did raise the share of zeta zeros proven to sit on the critical line from 41.6 to 67.2 percent. About 60 subagents, thousands of numerical checks against known zeros, and a Lean 4 proof. Fun detail: the person prompting it was Jarred Sumner, from the Bun slide.
+6. **Slide:** How does that succeed? Smart models. And an oracle.
+   **Notes:** How does something like the Bun rewrite succeed? Or a new bound on the zeta function? Models are really smart, sure. But it's also about having an oracle: a way to verify.
+7. **Slide:** The oracle Each one had a way to check the answer Bun The test suite Written in TypeScript, so any implementation, Zig or Rust, can run it Math Lean Every proof step is machine-checked. Every hypothesis can be run and discarded immediately.
+   **Notes:** Bun: the e2e tests are written in TypeScript, so any underlying implementation can run them. Great oracle for whether the model succeeded. Math: verification languages like Lean. Every hypothesis can be checked immediately and discarded.
+8. **Slide:** The oracle With an oracle, you can run a loop. Or a thousand. agent attempt oracle keep fail → discard, try again × 1,000 in parallel
+   **Notes:** Once you have an oracle you can run it in a loop. Or a thousand loops in parallel, burn a lot of money, and make it happen. Development keeps moving this way: build the oracle first so you can verify and build fast.
+9. **Slide:** But Agents get things wrong. A lot. Anthropic, Riemann zeta 650 ideas, none worked Claude's first attempt, before the run that found the new bound Knuth, "Claude's Cycles" Restarts lost the work "He had to do some restarts when Claude stopped on random errors; then some of the previous search results were lost." anthropic.com/research/riemann-zeta · cs.stanford.edu/~knuth/papers/claude-cycles.pdf
+   **Notes:** But agents will get things wrong. A lot. Claude's first pass at the zeta problem: 650 ideas, none worked. And Donald Knuth's write-up of Claude solving one of his open problems: restarts after random errors, and the earlier search results were lost. Agents need environments as close to production as possible, and they need to recover.
+10. **Slide:** In a database, "wrong" looks like this What now? Robert'); DROP TABLE Students;-- your coding agent xkcd.com/327 · CC BY-NC 2.5
+   **Notes:** We all know little Bobby Tables. Now cross out his name: it's your agent that dropped the table. What now?
+11. **Slide:** Operational systems For operational systems, the oracle is production. Instant A copy of production per attempt, a thousand at once Isolated Nothing an agent does touches the real thing Recoverable Every mistake has an undo Infra has to run at agent speed. Today: the database.
+   **Notes:** Bun had its test suite. Math has Lean. For operational systems, the oracle is the production environment: real schema, real data, real traffic. So agents need environments as close to production as possible, and infra has to run at agent speed: one copy per attempt, a thousand at once, every mistake undoable. Today I want to talk about one piece of that puzzle: the database.
+12. **Slide:** Lakebase Postgres Postgres on the lakebase architecture Postgres computes production agent branch scaled to zero safekeepers (WAL) pageservers object storage stateless storage keeps the full history Lakebase Postgres, available via Neon and via Databricks
+   **Notes:** Lakebase Postgres: Postgres on the lakebase architecture. Compute is stateless, storage keeps the history in object storage. That's what makes instant, copy-on-write branches possible. Same database via Neon and via Databricks. The demo uses Neon.
+13. **Slide:** Branching One branch per agent loop production agent-1 agent-2 agent-3 … agent-1000 copy-on-write: shared history, isolated writes seconds to create, whatever the size throw it away when the attempt fails
+   **Notes:** A branch is a new compute on the same history. No copy. Writes are isolated. Creation time doesn't depend on database size. So every agent loop gets its own copy of production: that's the oracle for database changes.
+14. **Slide:** Recovery Any point in history is a restore point production backup-before-migration DROP TABLE notes; restored $ neon branches restore production backup-before-migration
+   **Notes:** And because storage keeps the history, any point in time is a restore point. Take a backup branch before the production change. Agent drops a table: restore production to the backup.
+15. **Slide:** Demo Copilot CLI + a branch of production 7:20 Repo: AGENTS.md database rules and Neon skills 7:50 Agent branches, migrates, verifies against real data, retries 10:30 Merge: backup branch, then production 12:00 Destructive change, then restore
+   **Notes:** 6:40 total. Jump cuts are fine: prepared branch, prepared PR, finished runs.
+
+7:20 Repo: AGENTS.md database rules + Neon skills.
+7:50 Copilot CLI: feature that needs a migration. Agent creates a branch, migrates, verifies against real data. If it fails: discard the branch, try again. This is the oracle loop, on a database.
+10:30 Merge. Optional: GitHub Actions creates a test branch, then a backup branch, then migrates production.
+12:00 Destructive change. Restore production from the backup branch. Show the rows are back.
+16. **Slide:** What now? Agents ship fast when they can check their work. For operational systems, that check is production: instant to copy, isolated, easy to roll back. Infra has to run at agent speed.
+   **Notes:** Back to what now. Agents ship fast when they can check their work. For operational systems, that check is production: a copy that's instant to create, isolated from the real thing, and easy to roll back. Programming already runs at agent speed. Infra has to catch up. Ask yourself: where can your agents experiment, and what can you recover after a mistake?
+17. **Slide:** Thank you demo repo: TBD · @andrelandgraf
+   **Notes:** Demo repo link or QR here.
 
 ## v1: Session outline
 
-Sep 9, submitted to GitHub's session-outline template.
+Sep 9, submitted to GitHub's session-outline template. Verbatim, except two internal review notes that stay out of this public repo.
 
-### Abstract (current)
+### Talk
+
+**Title:** Make your Postgres agent-ready: Branching, isolation, and safer shipping
+
+**Abstract (current):**
 
 Giving agents access to real database infrastructure is risky: one wrong migration and production breaks. Database branching changes that.
 
@@ -144,7 +172,7 @@ When your Postgres database supports instant, isolated branches, agents can safe
 
 In this session, Andre Landgraf shows how branching and isolation work under the hood, how to set up agent-ready database environments using tools like MCP and GitHub Actions, plus a live demo of an agent managing a database branch end to end. You'll leave with a clear framework for making your own database infrastructure safe for agentic workflows.
 
-### Abstract (first iteration)
+**Abstract (first iteration, for contrast):**
 
 Postgres is becoming the git for OLTP. Where git is the default for version control, the industry is standardizing on Postgres as the operational data layer.
 
@@ -152,33 +180,109 @@ Why? It's battle-tested, open source, extensible, and community-led. Virtually e
 
 This talk shows how Serverless Postgres changes that. We'll break down Neon's architecture and how database branching enables agentic development, and how it powers platforms like Replit, Retool, and Netlify DB.
 
-### One thing to remember
+**Session length:** 15 min (Thu Oct 29, 12:45–1:00 PM PT)
+
+Mapped flow: opening 2 + architecture 5 + demo 7 + close 1. No third section.
+
+---
+
+### Section I — Talk-level framing
+
+These three questions help GitHub understand the narrative before anything else.
+
+#### What is the one thing you want someone to remember from this session?
+
+If an attendee remembers nothing else, what should it be? One or two sentences.
 
 I want to make a case that AI infra needs branching, snapshots and instant rollbacks across the stack so agents can make mistakes and recover. I'll use serverless Postgres to show what bringing those capabilities to the database looks like.
 
-### The audience's problem
+#### What problem does your audience have that you are solving?
+
+Describe the situation your attendees are in before they walk into your session. What are they struggling with, unsure about, or getting wrong?
 
 I'm speaking to developers who are bringing agents into their existing GitHub workflows, but still have trouble testing and recovering database changes. Local seed data goes stale. Agents need environments that represent production to develop in and test migrations.
 
 I want to show how database branching fits into that workflow: where the agent works, how GitHub Actions tests a migration and what we can recover when it goes wrong.
 
-### Opening hook
+#### What is your opening hook?
+
+How will you earn the room in the first two minutes? A surprising stat, a story, a provocative question, a demo — what is it, and why will it land?
 
 I'll open with xkcd's little Bobby Tables, cross out his name and replace him with an agent that dropped a table, then ask, "What now?" It connects a familiar database failure to the work we're starting to give agents.
 
 Next, I'll walk folks through a GitHub Actions release workflow. When do we run the migration? How do we test it? What happens if it fails? Those questions give the architecture diagram and demo a problem to work through.
 
-### Flow (2 + 5 + 7 + 1 = 15 min)
+---
 
-**Opening, 2 min.** Bobby Tables with an agent, "What now?", then a GitHub Actions release workflow: when do we run the migration, how do we test it against data that represents production, what happens if it goes wrong? These are database problems developers already face; giving agents the same work adds another reason to make testing and recovery part of the release workflow.
+### Section II — Session flow
 
-**Architecture, 5 min.** An animated architecture diagram of serverless Postgres and the lakebase architecture that enables branching, snapshots and rollbacks. Lakebase Postgres as the example, the same database via Neon and via Databricks; the demo uses Neon. Trace the workflow through the diagram: a branch for development and migration testing, a snapshot or backup branch before the production change and a recovery point if that change drops a table.
+Walk through the session section by section. For each part: what you are covering, and why it belongs. Add or remove sections to match the actual structure. Total must account for full session length.
 
-**Demo, 7 min.** GitHub Copilot CLI builds a small feature that requires database changes, guided by `AGENTS.md` and agent skills through a branch-based workflow on Neon. Jump to an open PR with the completed feature and merge it. The merge triggers GitHub Actions: a fresh database branch, the migration tested, an agent or script investigating the results. Once cleared, the workflow creates a backup branch and applies the migration to production. Then a destructive outcome in the same workflow, recovered by rolling back to the snapshot or backup branch.
+#### Opening — 2 min
 
-**Close, 1 min.** Back to "What now?" We've seen an agent change a database, a workflow test that change and recovery after a destructive outcome. Branching, snapshots and instant rollbacks belong across the stack when we're building infra for agents. Where can your agents experiment, and what state can you recover after a mistake?
+**What are you covering?**
 
-### Questions sent to GitHub
+I'll briefly show xkcd's little Bobby Tables, cross out his name and replace him with an agent that dropped a table. "What now?"
 
-- Do you prefer a live demo or a pre-recorded demo for this slot? Agent and GitHub Actions execution times make a live run harder to keep within seven minutes.
+Next, I'll walk folks through a GitHub Actions release workflow. When do we run the migration? How do we test it against data that represents production? What happens if it goes wrong?
+
+**Why does it belong here?**
+
+These are database problems developers already face. Giving agents the same work adds another reason to make testing and recovery part of the release workflow. I'll use these questions to connect the rest of the talk.
+
+#### Section 1 — 5 min
+
+**What are you covering?**
+
+I'll show an animated architecture diagram to briefly explain serverless Postgres and lakebase architecture that enables branching, snapshots and rollbacks for recovery.
+
+I'll use Lakebase Postgres as the serverless Postgres example. It's the same database product available via Neon and via Databricks. The demo will use it on Neon.
+
+I'll trace the workflow through the diagram: a branch for development and migration testing, a snapshot or backup branch before the production change and a recovery point if that change drops a table.
+
+**Why does it belong here?**
+
+I want attendees to understand what a database branch gives their agent and how recovery uses an earlier database state. The diagram gives them a model for the steps they'll see in GitHub Actions.
+
+#### Section 2 — 7 min (demo)
+
+**What are you covering?**
+
+I'll ask GitHub Copilot CLI to build a small feature that requires database changes. I'll show the `AGENTS.md` file and agent skills that guide it through a branch-based development workflow on Neon.
+
+Then I'll jump forward to an open PR with the completed feature and click merge. I'll follow the GitHub Actions workflow that merge triggers: it creates a fresh database branch on Neon, tests the migration and has an agent or script investigate the results.
+
+Once the migration is cleared to proceed, the workflow creates another branch on Neon in the background as a backup and applies the same migration to production.
+
+I'll also show a destructive outcome in that same workflow and recover by rolling back to a snapshot or backup branch.
+
+**Why does it belong here?**
+
+I'll answer the opening questions. They'll see GitHub Copilot CLI follow the development instructions and GitHub Actions run the release steps, with branchable Postgres on Neon providing the test environment and recovery primitives needed to bring the database to this modern workflow.
+
+#### Closing — 1 min
+
+**What are you covering?**
+
+I'll return to "What now?" We've seen an agent change a database, a workflow test that change and recovery after a destructive outcome.
+
+I would argue that branching, snapshots and instant rollbacks belong across the stack when we're building infra for agents. I'll ask attendees to look at where their own agents can experiment and what state they can recover after a mistake.
+
+**Why does it belong here?**
+
+I want attendees to carry those questions into their own systems. The Postgres demo gives them one example they can use when evaluating the rest of their AI infra.
+
+---
+
+### Section III — Scope and delivery
+
+#### What will you show, not just tell?
+
+- **Opening:** I'll show a GitHub Actions release workflow as an illustration/diagram.
+- **Section 1:** I'll show an animated architecture diagram to briefly explain serverless Postgres and lakebase architecture that enables branching, snapshots and rollbacks for recovery.
+- **Section 2 (demo):** GitHub Copilot CLI building out a mini feature leveraging the Neon CLI to branch the db in the process. Then I'll jump to merge the PR and review the triggered GitHub Actions including a test-branch migration, a backup branch, prod apply and snapshot/backup recovery.
+
+#### Any questions for us?
+
+- Do you prefer a live demo or a pre-recorded demo for this slot? Agent and github action execution times make a live run harder to keep within seven minutes.
 - Does the 15-minute slot include Q&A at all?
