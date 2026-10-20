@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Make your Postgres agent-ready — flow draft</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0f1411;
+    --fg: #ffffff;
+    --dim: #d9d9d9;
+    --muted: #8b958f;
+    --green: #5fed83;
+    --green2: #0fbf3e;
+    --green3: #08872b;
+    --purple: #ae85ff;
+    --purple2: #583af7;
+    --pink: #ff7ded;
+    --red: #f73678;
+    --orange: #e96e12;
+    --mustard: #bba00a;
+    --blue: #168ffb;
+    --line: #2a332d;
+    --display: "Mona Sans Display", "Mona Sans", system-ui, sans-serif;
+    --sans: "Mona Sans", system-ui, sans-serif;
+    --mono: "Mona Sans Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #050706; color: var(--fg); font-family: var(--sans); overflow: hidden; }
+
+  #viewport { position: fixed; top: 0; left: 0; right: 0; bottom: 36px; }
+  #viewport.with-notes { right: 420px; }
+  #stage { width: 1600px; height: 900px; position: absolute; left: 50%; top: 50%; background: var(--bg); overflow: hidden; }
+
+  .slide { position: absolute; inset: 0; padding: 96px 120px 110px; display: none; flex-direction: column; }
+  .slide.active { display: flex; }
+  .slide.center { justify-content: center; }
+
+  .eyebrow { font-family: var(--mono); font-size: 18px; letter-spacing: .12em; text-transform: uppercase; color: var(--green); margin-bottom: 28px; }
+  h1 { font-family: var(--display); font-weight: 400; font-size: 96px; line-height: 1.02; letter-spacing: -.02em; }
+  h2 { font-family: var(--display); font-weight: 400; font-size: 64px; line-height: 1.06; letter-spacing: -.015em; }
+  h3 { font-family: var(--display); font-weight: 400; font-size: 32px; line-height: 1.15; }
+  p, li { font-size: 26px; line-height: 1.4; color: var(--dim); font-weight: 500; }
+  .xl { font-size: 128px; }
+  .green { color: var(--green); }
+  .dim { color: var(--dim); }
+  .muted { color: var(--muted); }
+  .mono { font-family: var(--mono); }
+  .spacer { flex: 1; }
+
+  .stats { display: grid; gap: 48px; margin-top: 64px; }
+  .stats.three { grid-template-columns: repeat(3, 1fr); }
+  .stats.two { grid-template-columns: repeat(2, 1fr); }
+  .stat .num { font-family: var(--display); font-size: 120px; line-height: 1; color: var(--green); letter-spacing: -.03em; }
+  .stat .label { margin-top: 18px; font-size: 24px; color: var(--dim); max-width: 380px; }
+  .source { position: absolute; left: 120px; bottom: 56px; font-family: var(--mono); font-size: 15px; color: var(--muted); }
+
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin-top: 64px; }
+  .card { border-top: 2px solid var(--green); padding-top: 24px; }
+  .card .k { font-family: var(--mono); font-size: 16px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 14px; }
+  .card h3 { font-size: 30px; margin-bottom: 14px; }
+  .card p { font-size: 21px; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; margin-top: 56px; }
+
+  .title-slide { padding: 0; display: none; grid-template-columns: 200px 1fr; }
+  .title-slide.active { display: grid; }
+  .title-rail { display: grid; grid-template-rows: repeat(4, 1fr); border-right: 2px solid var(--green3); }
+  .title-rail div:nth-child(1) { background: var(--pink); }
+  .title-rail div:nth-child(2) { background: #1b6e33; }
+  .title-rail div:nth-child(3) { background: #d9d9d9; }
+  .title-rail div:nth-child(4) { background: var(--purple2); }
+  .title-main { display: grid; grid-template-rows: 1fr auto; }
+  .title-main .t { padding: 90px 100px; }
+  .title-main .card-row { border-top: 2px solid var(--green3); padding: 32px 100px; display: flex; gap: 28px; align-items: center; }
+  .avatar { width: 84px; height: 84px; border-radius: 4px; background: #2a332d; display: grid; place-items: center; font-family: var(--mono); color: var(--muted); font-size: 14px; }
+  .speaker .n { font-size: 26px; font-weight: 600; }
+  .speaker .r { font-size: 22px; color: var(--dim); }
+
+  .comic { display: flex; gap: 48px; align-items: center; margin-top: 40px; }
+  .comic img { width: 920px; border-radius: 4px; background: #fff; padding: 12px; }
+  .comic .swap { font-family: var(--mono); font-size: 22px; line-height: 1.6; white-space: nowrap; }
+  .strike { text-decoration: line-through; text-decoration-color: var(--red); text-decoration-thickness: 4px; color: var(--muted); }
+
+  .demo-bg { position: absolute; inset: 0; background:
+    linear-gradient(90deg, transparent 0 0), radial-gradient(circle at 80% 30%, rgba(88,58,247,.35), transparent 50%),
+    radial-gradient(circle at 20% 90%, rgba(95,237,131,.18), transparent 45%); }
+  .beats { margin-top: 48px; display: grid; gap: 14px; position: relative; }
+  .beat { display: grid; grid-template-columns: 110px 1fr; gap: 24px; align-items: baseline; }
+  .beat .at { font-family: var(--mono); font-size: 20px; color: var(--green); }
+  .beat p { font-size: 25px; }
+
+  svg text { font-family: var(--mono); }
+
+  /* chrome */
+  #hud { position: fixed; left: 0; right: 0; bottom: 0; height: 36px; display: flex; align-items: center; gap: 22px; padding: 0 16px; font-family: var(--mono); font-size: 13px; color: var(--muted); background: rgba(5,7,6,.85); z-index: 5; }
+  #hud.with-notes { right: 420px; }
+  #hud b { color: var(--fg); font-weight: 500; }
+  #hud .ok { color: var(--green); }
+  #hud .late { color: var(--orange); }
+  #bar { position: fixed; left: 0; top: 0; height: 3px; background: var(--green); z-index: 6; transition: width .2s; }
+  #notes { position: fixed; top: 0; right: 0; bottom: 0; width: 420px; background: #0a0d0b; border-left: 1px solid var(--line); padding: 28px; overflow-y: auto; display: none; z-index: 7; }
+  #notes.open { display: block; }
+  #notes .meta { font-family: var(--mono); font-size: 12px; color: var(--muted); line-height: 1.7; margin-bottom: 18px; }
+  #notes .body { font-size: 16px; line-height: 1.55; color: var(--dim); white-space: pre-wrap; }
+  #notes .next { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  #help { position: fixed; top: 12px; right: 16px; font-family: var(--mono); font-size: 12px; color: var(--muted); z-index: 4; }
+  #help.with-notes { right: 436px; }
+
+  #overview { position: fixed; inset: 0; background: #050706; z-index: 10; display: none; overflow-y: auto; padding: 32px; }
+  #overview.open { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; align-content: start; }
+  .thumb { cursor: pointer; border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; font-family: var(--mono); font-size: 13px; color: var(--dim); min-height: 96px; }
+  .thumb:hover, .thumb.cur { border-color: var(--green); }
+  .thumb .n { color: var(--green); }
+  .thumb .t { margin-top: 6px; font-family: var(--sans); font-size: 16px; color: var(--fg); }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="help">← → navigate · N notes · T timer · R reset · G overview</div>
+<div id="viewport"><div id="stage">
+
+<!-- 1 -->
+<section class="slide title-slide" data-title="Title" data-section="Opening" data-dur="10" data-tpl="23 · Speaker Card (1)"
+  data-notes="Short. Get to the hype fast.">
+  <div class="title-rail"><div></div><div></div><div></div><div></div></div>
+  <div class="title-main">
+    <div class="t">
+      <h1>Make your Postgres<br>agent-ready</h1>
+      <p style="margin-top:32px;font-size:34px">Branching, isolation, and safer shipping</p>
+    </div>
+    <div class="card-row">
+      <div class="avatar">photo</div>
+      <div class="speaker"><div class="n">Andre Landgraf</div><div class="r">Staff Developer Advocate</div><div class="r">Databricks</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide center" data-title="Agent speed" data-section="Agent speed" data-dur="15" data-tpl="31 · Large statement"
+  data-notes="Start on a high note. Heading into 2027, you can build whatever you want. Programming now runs at agent speed. So does math. Two examples.">
+  <div class="eyebrow">2026 → 2027</div>
+  <h1 class="xl">Programming now runs<br>at <span class="green">agent speed.</span></h1>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Bun: Zig → Rust" data-section="Agent speed" data-dur="30" data-tpl="57 · Three large numbers"
+  data-notes="Bun rewrote the whole runtime from Zig to Rust with agents. Merged in May. About 11 days from start to the full test suite passing on every platform. Around 165k dollars in tokens.">
+  <div class="eyebrow">Programming</div>
+  <h2>Bun, rewritten from Zig to Rust</h2>
+  <div class="stats three">
+    <div class="stat"><div class="num">~11</div><div class="label">days until the full test suite passed</div></div>
+    <div class="stat"><div class="num">100%</div><div class="label">of the test suite passing on all platforms before merge</div></div>
+    <div class="stat"><div class="num">~$165k</div><div class="label">in tokens</div></div>
+  </div>
+  <div class="source">bun.sh/blog/bun-in-rust · github.com/oven-sh/bun/pull/30412 · claude.com/resources/articles/ai-code-migration</div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="OpenAI: ten open problems" data-section="Agent speed" data-dur="30" data-tpl="57 · Three large numbers"
+  data-notes="So is math. In August OpenAI published ten results on long-standing open problems: sphere packing, Ramsey numbers, three Erdős problems. [One sentence redacted for this public repo.] All ten together cost about 2,000 dollars in tokens. And every one ships with a Lean certificate.">
+  <div class="eyebrow">Math · OpenAI</div>
+  <h2>Ten long-standing open problems, resolved or advanced</h2>
+  <div class="stats three">
+    <div class="stat"><div class="num">10</div><div class="label">results, including Erdős problems 183, 146 and 180</div></div>
+    <div class="stat"><div class="num">~$2k</div><div class="label">in tokens for all ten</div></div>
+    <div class="stat"><div class="num">10/10</div><div class="label">formalized as Lean proofs</div></div>
+  </div>
+  <div class="source">openai.com/index/ten-advances-in-mathematics (Aug 1, 2026) · github.com/openai/ten-proofs</div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Anthropic: Riemann zeta zeros" data-section="Agent speed" data-dur="30" data-tpl="56 · Two large numbers"
+  data-notes="And Anthropic: asked to take a real stab at the Riemann hypothesis. It didn't prove it. It did raise the share of zeta zeros proven to sit on the critical line from 41.6 to 67.2 percent. About 60 subagents, thousands of numerical checks against known zeros, and a Lean 4 proof. Fun detail: the person prompting it was Jarred Sumner, from the Bun slide.">
+  <div class="eyebrow">Math · Anthropic</div>
+  <h2>Riemann zeta zeros on the critical line</h2>
+  <div class="stats two" style="grid-template-columns:1.4fr 1fr">
+    <div class="stat"><div class="num" style="font-size:104px;white-space:nowrap">41.6% → 67.2%</div><div class="label">of zeros proven to lie on the critical line: the previous record, then Claude's</div></div>
+    <div class="stat"><div class="num">~60</div><div class="label">subagents, thousands of numerical checks, one Lean 4 proof</div></div>
+  </div>
+  <div class="source">anthropic.com/research/riemann-zeta (Aug 10, 2026) · github.com/anthropics/zeta-23-lean</div>
+</section>
+
+<!-- 6 -->
+<section class="slide center" data-title="How does that succeed?" data-section="The oracle" data-dur="20" data-tpl="31 · Large statement"
+  data-notes="How does something like the Bun rewrite succeed? Or a new bound on the zeta function? Models are really smart, sure. But it's also about having an oracle: a way to verify.">
+  <div class="eyebrow">How does that succeed?</div>
+  <h1 class="xl">Smart models.<br>And an <span class="green">oracle.</span></h1>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Two oracles" data-section="The oracle" data-dur="40" data-tpl="43 · Two statements"
+  data-notes="Bun: the e2e tests are written in TypeScript, so any underlying implementation can run them. Great oracle for whether the model succeeded. Math: verification languages like Lean. Every hypothesis can be checked immediately and discarded.">
+  <div class="eyebrow">The oracle</div>
+  <h2>Each one had a way to check the answer</h2>
+  <div class="two-col">
+    <div class="card"><div class="k">Bun</div><h3>The test suite</h3><p>Written in TypeScript, so any implementation, Zig or Rust, can run it</p></div>
+    <div class="card"><div class="k">Math</div><h3>Lean</h3><p>Every proof step is machine-checked. Every hypothesis can be run and discarded immediately.</p></div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="Loops × 1,000" data-section="The oracle" data-dur="25" data-tpl="41 · Title and Content (diagram)"
+  data-notes="Once you have an oracle you can run it in a loop. Or a thousand loops in parallel, burn a lot of money, and make it happen. Development keeps moving this way: build the oracle first so you can verify and build fast.">
+  <div class="eyebrow">The oracle</div>
+  <h2>With an oracle, you can run a loop.<br><span class="dim">Or a thousand.</span></h2>
+  <svg viewBox="0 0 1360 380" width="1360" height="380" style="margin-top:40px">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d9d9d9"/></marker></defs>
+    <g fill="none" stroke="#d9d9d9" stroke-width="2">
+      <rect x="20" y="130" width="230" height="100" rx="6"/>
+      <rect x="420" y="130" width="230" height="100" rx="6"/>
+      <rect x="820" y="130" width="230" height="100" rx="6" stroke="#5fed83" stroke-width="3"/>
+      <line x1="250" y1="180" x2="412" y2="180" marker-end="url(#a)"/>
+      <line x1="650" y1="180" x2="812" y2="180" marker-end="url(#a)"/>
+      <line x1="1050" y1="160" x2="1220" y2="90" marker-end="url(#a)"/>
+      <path d="M935 230 C 935 340, 135 340, 135 238" marker-end="url(#a)"/>
+    </g>
+    <g font-size="24" fill="#fff" text-anchor="middle">
+      <text x="135" y="188">agent</text>
+      <text x="535" y="188">attempt</text>
+      <text x="935" y="188" fill="#5fed83">oracle</text>
+      <text x="1290" y="88" fill="#5fed83">keep</text>
+      <text x="535" y="330" fill="#f73678">fail → discard, try again</text>
+    </g>
+    <text x="1230" y="250" font-size="44" fill="#ae85ff" text-anchor="middle">× 1,000</text>
+    <text x="1230" y="290" font-size="18" fill="#8b958f" text-anchor="middle">in parallel</text>
+  </svg>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Agents get it wrong" data-section="Agents get it wrong" data-dur="35" data-tpl="43 · Two statements"
+  data-notes="But agents will get things wrong. A lot. Claude's first pass at the zeta problem: 650 ideas, none worked. And Donald Knuth's write-up of Claude solving one of his open problems: restarts after random errors, and the earlier search results were lost. Agents need environments as close to production as possible, and they need to recover.">
+  <div class="eyebrow">But</div>
+  <h2>Agents get things wrong. <span class="green">A lot.</span></h2>
+  <div class="two-col">
+    <div class="card"><div class="k">Anthropic, Riemann zeta</div><h3>650 ideas, none worked</h3><p>Claude's first attempt, before the run that found the new bound</p></div>
+    <div class="card"><div class="k">Knuth, "Claude's Cycles"</div><h3>Restarts lost the work</h3><p>"He had to do some restarts when Claude stopped on random errors; then some of the previous search results were lost."</p></div>
+  </div>
+  <div class="source">anthropic.com/research/riemann-zeta · cs.stanford.edu/~knuth/papers/claude-cycles.pdf</div>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="Bobby Tables" data-section="Agents get it wrong" data-dur="25" data-tpl="49 · Title and image stacked"
+  data-notes="We all know little Bobby Tables. Now cross out his name: it's your agent that dropped the table. What now?">
+  <div class="eyebrow">In a database, "wrong" looks like this</div>
+  <h2>What now?</h2>
+  <div class="comic">
+    <img src="https://imgs.xkcd.com/comics/exploits_of_a_mom.png" alt="xkcd 327: Exploits of a Mom">
+    <div class="swap">
+      <div class="strike">Robert'); DROP TABLE Students;--</div>
+      <div class="green" style="margin-top:16px">your coding agent</div>
+    </div>
+  </div>
+  <div class="source">xkcd.com/327 · CC BY-NC 2.5</div>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="Agent factories need infra" data-section="Infrastructure" data-dur="40" data-tpl="42 · Title and Subtitle"
+  data-notes="Bun had its test suite. Math has Lean. For operational systems, the oracle is the production environment: real schema, real data, real traffic. So agents need environments as close to production as possible, and infra has to run at agent speed: one copy per attempt, a thousand at once, every mistake undoable. Today I want to talk about one piece of that puzzle: the database.">
+  <div class="eyebrow">Operational systems</div>
+  <h2>For operational systems,<br>the oracle is <span class="green">production.</span></h2>
+  <div class="grid4" style="grid-template-columns:repeat(3,1fr)">
+    <div class="card"><h3>Instant</h3><p>A copy of production per attempt, a thousand at once</p></div>
+    <div class="card"><h3>Isolated</h3><p>Nothing an agent does touches the real thing</p></div>
+    <div class="card"><h3>Recoverable</h3><p>Every mistake has an undo</p></div>
+  </div>
+  <div class="spacer"></div>
+  <p style="font-size:30px">Infra has to run at <span class="green">agent speed.</span> Today: the database.</p>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="Lakebase Postgres" data-section="Infrastructure" data-dur="45" data-tpl="35 · Roadmap slide_1 feature"
+  data-notes="Lakebase Postgres: Postgres on the lakebase architecture. Compute is stateless, storage keeps the history in object storage. That's what makes instant, copy-on-write branches possible. Same database via Neon and via Databricks. The demo uses Neon.">
+  <div class="eyebrow">Lakebase Postgres</div>
+  <h2>Postgres on the lakebase architecture</h2>
+  <svg viewBox="0 0 1360 440" width="1360" height="440" style="margin-top:36px">
+    <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d9d9d9"/></marker></defs>
+    <g fill="none" stroke-width="2">
+      <rect x="20" y="40" width="260" height="80" rx="6" stroke="#5fed83"/>
+      <rect x="20" y="160" width="260" height="80" rx="6" stroke="#5fed83"/>
+      <rect x="20" y="280" width="260" height="80" rx="6" stroke="#5fed83" stroke-dasharray="8 6"/>
+      <rect x="430" y="160" width="250" height="80" rx="6" stroke="#d9d9d9"/>
+      <rect x="800" y="160" width="250" height="80" rx="6" stroke="#d9d9d9"/>
+      <rect x="1140" y="140" width="200" height="120" rx="6" stroke="#ae85ff"/>
+      <g stroke="#d9d9d9">
+        <line x1="280" y1="80" x2="422" y2="190" marker-end="url(#b)"/>
+        <line x1="280" y1="200" x2="422" y2="200" marker-end="url(#b)"/>
+        <line x1="280" y1="320" x2="422" y2="210" marker-end="url(#b)"/>
+        <line x1="680" y1="200" x2="792" y2="200" marker-end="url(#b)"/>
+        <line x1="1050" y1="200" x2="1132" y2="200" marker-end="url(#b)"/>
+      </g>
+    </g>
+    <g font-size="22" fill="#fff" text-anchor="middle">
+      <text x="150" y="28" font-size="18" fill="#8b958f">Postgres computes</text>
+      <text x="150" y="88">production</text>
+      <text x="150" y="208">agent branch</text>
+      <text x="150" y="328" fill="#8b958f">scaled to zero</text>
+      <text x="555" y="208">safekeepers (WAL)</text>
+      <text x="925" y="208">pageservers</text>
+      <text x="1240" y="196" fill="#ae85ff">object</text>
+      <text x="1240" y="226" fill="#ae85ff">storage</text>
+    </g>
+    <g font-size="18" fill="#8b958f" text-anchor="middle">
+      <text x="150" y="400">stateless</text>
+      <text x="905" y="290">storage keeps the full history</text>
+    </g>
+  </svg>
+  <div class="source">Lakebase Postgres, available via Neon and via Databricks</div>
+</section>
+
+<!-- 13 -->
+<section class="slide" data-title="Copy-on-write branches" data-section="Infrastructure" data-dur="50" data-tpl="41 · Title and Content (Morph from 14)"
+  data-notes="A branch is a new compute on the same history. No copy. Writes are isolated. Creation time doesn't depend on database size. So every agent loop gets its own copy of production: that's the oracle for database changes.">
+  <div class="eyebrow">Branching</div>
+  <h2>One branch per agent loop</h2>
+  <svg viewBox="0 0 1360 460" width="1360" height="460" style="margin-top:28px">
+    <line x1="40" y1="90" x2="1320" y2="90" stroke="#5fed83" stroke-width="6"/>
+    <g fill="#5fed83"><circle cx="200" cy="90" r="10"/><circle cx="420" cy="90" r="10"/><circle cx="640" cy="90" r="10"/><circle cx="860" cy="90" r="10"/></g>
+    <text x="40" y="60" font-size="22" fill="#fff">production</text>
+    <g stroke="#ae85ff" stroke-width="4" fill="none">
+      <path d="M640 90 C 640 170, 700 170, 760 170 L 1320 170"/>
+      <path d="M640 90 C 640 250, 700 250, 760 250 L 1240 250"/>
+      <path d="M640 90 C 640 330, 700 330, 760 330 L 1120 330"/>
+    </g>
+    <g font-size="20" fill="#ae85ff"><text x="780" y="160">agent-1</text><text x="780" y="240">agent-2</text><text x="780" y="320">agent-3</text></g>
+    <text x="780" y="400" font-size="28" fill="#ae85ff">… agent-1000</text>
+    <g font-size="20" fill="#d9d9d9">
+      <text x="40" y="200">copy-on-write: shared history, isolated writes</text>
+      <text x="40" y="240">seconds to create, whatever the size</text>
+      <text x="40" y="280">throw it away when the attempt fails</text>
+    </g>
+  </svg>
+</section>
+
+<!-- 14 -->
+<section class="slide" data-title="Restore points" data-section="Infrastructure" data-dur="45" data-tpl="41 · Title and Content (Morph from 15)"
+  data-notes="And because storage keeps the history, any point in time is a restore point. Take a backup branch before the production change. Agent drops a table: restore production to the backup.">
+  <div class="eyebrow">Recovery</div>
+  <h2>Any point in history is a restore point</h2>
+  <svg viewBox="0 0 1360 440" width="1360" height="440" style="margin-top:28px">
+    <line x1="40" y1="120" x2="1320" y2="120" stroke="#5fed83" stroke-width="6"/>
+    <text x="40" y="90" font-size="22" fill="#fff">production</text>
+    <circle cx="560" cy="120" r="12" fill="#5fed83"/>
+    <path d="M560 120 C 560 220, 620 230, 680 230 L 1000 230" stroke="#bba00a" stroke-width="4" fill="none"/>
+    <text x="700" y="220" font-size="20" fill="#bba00a">backup-before-migration</text>
+    <g transform="translate(900,120)"><line x1="-16" y1="-16" x2="16" y2="16" stroke="#f73678" stroke-width="6"/><line x1="16" y1="-16" x2="-16" y2="16" stroke="#f73678" stroke-width="6"/></g>
+    <text x="900" y="70" font-size="22" fill="#f73678" text-anchor="middle">DROP TABLE notes;</text>
+    <path d="M1000 230 C 1100 230, 1140 180, 1150 132" stroke="#d9d9d9" stroke-width="3" fill="none" stroke-dasharray="8 6"/>
+    <circle cx="1150" cy="120" r="12" fill="#5fed83"/>
+    <text x="1150" y="90" font-size="20" fill="#5fed83" text-anchor="middle">restored</text>
+    <rect x="40" y="320" width="900" height="70" rx="6" fill="#161c18" stroke="#2a332d"/>
+    <text x="70" y="364" font-size="24" fill="#fff">$ neon branches restore production backup-before-migration</text>
+  </svg>
+</section>
+
+<!-- 15 -->
+<section class="slide" data-title="Demo" data-section="Demo" data-dur="400" data-tpl="60 · Demo"
+  data-notes="6:40 total. Jump cuts are fine: prepared branch, prepared PR, finished runs.
+
+7:20 Repo: AGENTS.md database rules + Neon skills.
+7:50 Copilot CLI: feature that needs a migration. Agent creates a branch, migrates, verifies against real data. If it fails: discard the branch, try again. This is the oracle loop, on a database.
+10:30 Merge. Optional: GitHub Actions creates a test branch, then a backup branch, then migrates production.
+12:00 Destructive change. Restore production from the backup branch. Show the rows are back.">
+  <div class="demo-bg"></div>
+  <div class="eyebrow" style="position:relative">Demo</div>
+  <h1 style="position:relative">Copilot CLI + a branch<br>of production</h1>
+  <div class="beats">
+    <div class="beat"><div class="at">7:20</div><p>Repo: AGENTS.md database rules and Neon skills</p></div>
+    <div class="beat"><div class="at">7:50</div><p>Agent branches, migrates, verifies against real data, retries</p></div>
+    <div class="beat"><div class="at">10:30</div><p>Merge: backup branch, then production</p></div>
+    <div class="beat"><div class="at">12:00</div><p>Destructive change, then restore</p></div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide center" data-title="Close" data-section="Close" data-dur="45" data-tpl="42 · Title and Subtitle"
+  data-notes="Back to what now. Agents ship fast when they can check their work. For operational systems, that check is production: a copy that's instant to create, isolated from the real thing, and easy to roll back. Programming already runs at agent speed. Infra has to catch up. Ask yourself: where can your agents experiment, and what can you recover after a mistake?">
+  <div class="eyebrow">What now?</div>
+  <h1>Agents ship fast when they can check their work.</h1>
+  <p style="margin-top:36px;font-size:34px">For operational systems, that check is production:<br>instant to copy, isolated, easy to roll back.</p>
+  <h2 class="green" style="margin-top:48px">Infra has to run at agent speed.</h2>
+</section>
+
+<!-- 17 -->
+<section class="slide center" data-title="Thank you" data-section="Close" data-dur="15" data-tpl="73 · Thank you (+ 72 Survey if required)"
+  data-notes="Demo repo link or QR here.">
+  <h1 class="xl">Thank you</h1>
+  <p class="mono" style="margin-top:32px">demo repo: TBD · @andrelandgraf</p>
+</section>
+
+</div></div>
+
+<div id="hud">
+  <span><b id="h-n"></b></span>
+  <span id="h-sec"></span>
+  <span>planned <b id="h-at"></b> · <span id="h-dur"></span></span>
+  <span id="h-timer">timer off (T)</span>
+  <span id="h-tpl"></span>
+</div>
+<aside id="notes"><div class="meta" id="n-meta"></div><div class="body" id="n-body"></div><div class="next" id="n-next"></div></aside>
+<div id="overview"></div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  const stage = document.getElementById('stage');
+  const viewport = document.getElementById('viewport');
+  const notes = document.getElementById('notes');
+  const hud = document.getElementById('hud');
+  const help = document.getElementById('help');
+  const overview = document.getElementById('overview');
+
+  const starts = [];
+  slides.reduce((t, s, i) => { starts[i] = t; return t + Number(s.dataset.dur); }, 0);
+  const total = starts.at(-1) + Number(slides.at(-1).dataset.dur);
+
+  const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+
+  let cur = Math.min(Math.max(Number(location.hash.slice(1)) - 1 || 0, 0), slides.length - 1);
+  let timerStart = null;
+
+  function fit() {
+    const box = viewport.getBoundingClientRect();
+    const scale = Math.min(box.width / 1600, box.height / 900);
+    stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  }
+
+  function render() {
+    slides.forEach((s, i) => s.classList.toggle('active', i === cur));
+    const s = slides[cur];
+    document.getElementById('h-n').textContent = `${cur + 1}/${slides.length}`;
+    document.getElementById('h-sec').textContent = s.dataset.section;
+    document.getElementById('h-at').textContent = fmt(starts[cur]);
+    document.getElementById('h-dur').textContent = `${fmt(Number(s.dataset.dur))} on this slide`;
+    document.getElementById('h-tpl').textContent = `template ${s.dataset.tpl}`;
+    document.getElementById('bar').style.width = `${(starts[cur] / total) * 100}%`;
+    document.getElementById('n-meta').innerHTML =
+      `${cur + 1}. ${s.dataset.title}<br>planned ${fmt(starts[cur])} → ${fmt(starts[cur] + Number(s.dataset.dur))} of ${fmt(total)}<br>template ${s.dataset.tpl}`;
+    document.getElementById('n-body').textContent = s.dataset.notes;
+    const next = slides[cur + 1];
+    document.getElementById('n-next').textContent = next ? `Next: ${next.dataset.title}` : 'End';
+    history.replaceState(null, '', `#${cur + 1}`);
+    tick();
+  }
+
+  function tick() {
+    const el = document.getElementById('h-timer');
+    if (timerStart === null) { el.textContent = 'timer off (T)'; el.className = ''; return; }
+    const elapsed = (Date.now() - timerStart) / 1000;
+    const plannedEnd = starts[cur] + Number(slides[cur].dataset.dur);
+    el.textContent = `elapsed ${fmt(elapsed)} · ${elapsed > plannedEnd ? 'behind' : 'on time'}`;
+    el.className = elapsed > plannedEnd ? 'late' : 'ok';
+  }
+  setInterval(tick, 500);
+
+  function go(i) { cur = Math.min(Math.max(i, 0), slides.length - 1); render(); }
+
+  function toggleNotes() {
+    const open = notes.classList.toggle('open');
+    [viewport, hud, help].forEach((el) => el.classList.toggle('with-notes', open));
+    fit();
+  }
+
+  function toggleOverview() {
+    if (overview.classList.toggle('open')) {
+      overview.innerHTML = slides.map((s, i) =>
+        `<div class="thumb ${i === cur ? 'cur' : ''}" data-i="${i}"><span class="n">${i + 1}</span> · ${fmt(starts[i])} · ${s.dataset.section}<div class="t">${s.dataset.title}</div><div class="muted">${s.dataset.tpl}</div></div>`
+      ).join('');
+    }
+  }
+  overview.addEventListener('click', (e) => {
+    const t = e.target.closest('.thumb');
+    if (!t) return;
+    overview.classList.remove('open');
+    go(Number(t.dataset.i));
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); go(cur + 1); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(slides.length - 1);
+    else if (e.key === 'n' || e.key === 'N') toggleNotes();
+    else if (e.key === 'g' || e.key === 'G') toggleOverview();
+    else if (e.key === 't' || e.key === 'T') { timerStart = timerStart === null ? Date.now() - starts[cur] * 1000 : null; tick(); }
+    else if (e.key === 'r' || e.key === 'R') { timerStart = null; go(0); }
+    else if (e.key === 'Escape') overview.classList.remove('open');
+  });
+  stage.addEventListener('click', () => go(cur + 1));
+
+  window.addEventListener('hashchange', () => {
+    const i = Number(location.hash.slice(1)) - 1;
+    if (Number.isInteger(i) && i !== cur) go(i);
+  });
+  window.addEventListener('resize', fit);
+  fit();
+  render();
+</script>
+</body>
+</html>

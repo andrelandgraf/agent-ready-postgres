@@ -1,6 +1,6 @@
 # Software Factory
 
-Demo for the GitHub Universe 2026 session "Make your Postgres agent-ready: Branching, isolation, and safer shipping" (Thursday, October 29, 12:45 PM PT).
+Demo for the GitHub Universe 2026 session "Make your Postgres agent-ready: Branching, isolation, and safer shipping" (Thursday, October 29, 12:45 PM PT). The talk itself, with every version of the script, is in [docs/talk.md](docs/talk.md).
 
 Agents ship fast when they can check their work. For operational systems, that check is production: a copy that is instant to create, isolated from the real thing, and easy to roll back. The Software Factory shows that loop on one screen for [vibecastly](https://vibecastly.vercel.app), an AI image studio on Neon.
 
