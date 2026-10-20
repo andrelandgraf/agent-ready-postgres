@@ -13,7 +13,7 @@ Talk notes for GitHub Universe 2026, all versions in one place. The current vers
 
 | Version | Date | What changed |
 |---|---|---|
-| [v3](#v3-current) | Oct 20 | Opening rewritten around "agent speed"; the oracle is production; Lakebase intro with the two ways in; Software Factory demo; deck with Neon's official architecture diagram |
+| [v3](#v3-current) | Oct 20 | Opening rewritten around "agent speed"; the oracle is production; Lakebase intro with the two ways in; Software Factory demo; 14-slide deck: one math slide, one oracle loop slide, Neon's official architecture diagram |
 | [v2](#v2-html-flow-deck) | Oct 18 | 17-slide HTML flow deck: Bun and math examples, the oracle, Bobby Tables, Lakebase, branching, recovery, Copilot CLI demo |
 | [v1](#v1-session-outline) | Sep 9 | Session outline submitted to GitHub: Bobby Tables hook, architecture, Copilot CLI + GitHub Actions release demo with restore |
 
@@ -23,7 +23,7 @@ Agents ship fast when they can check their work. For operational systems, that c
 
 ## v3 (current)
 
-Slides: [talk-deck-v3/index.html](talk-deck-v3/index.html), the v2 deck with the hand-drawn architecture diagram on slide 12 replaced by the official one from [neon.com/docs/introduction/architecture-overview](https://neon.com/docs/introduction/architecture-overview).
+Slides: [talk-deck-v3/index.html](talk-deck-v3/index.html), 14 slides built from the v2 deck: one math slide ("Agents are solving math", OpenAI and Anthropic results in small print) instead of two; one oracle slide (a loop of agent, oracle and "fail → fix and try again" until all checks pass) instead of three; and Neon's official architecture diagram from [neon.com/docs/introduction/architecture-overview](https://neon.com/docs/introduction/architecture-overview) on the Lakebase slide.
 
 ### Run of show
 

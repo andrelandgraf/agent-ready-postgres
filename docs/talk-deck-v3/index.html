@@ -157,74 +157,53 @@
 </section>
 
 <!-- 4 -->
-<section class="slide" data-title="OpenAI: ten open problems" data-section="Agent speed" data-dur="30" data-tpl="57 · Three large numbers"
-  data-notes="So is math. In August OpenAI published ten results on long-standing open problems: sphere packing, Ramsey numbers, three Erdős problems. [One sentence redacted for this public repo.] All ten together cost about 2,000 dollars in tokens. And every one ships with a Lean certificate.">
-  <div class="eyebrow">Math · OpenAI</div>
-  <h2>Ten long-standing open problems, resolved or advanced</h2>
-  <div class="stats three">
-    <div class="stat"><div class="num">10</div><div class="label">results, including Erdős problems 183, 146 and 180</div></div>
-    <div class="stat"><div class="num">~$2k</div><div class="label">in tokens for all ten</div></div>
-    <div class="stat"><div class="num">10/10</div><div class="label">formalized as Lean proofs</div></div>
+<section class="slide" data-title="Math" data-section="Agent speed" data-dur="45" data-tpl="57 · Three large numbers"
+  data-notes="So is math. In August OpenAI published ten results on long-standing open problems: sphere packing, Ramsey numbers, three Erdős problems. All ten together cost about 2,000 dollars in tokens and every one ships with a Lean certificate. And Anthropic took a real stab at the Riemann hypothesis. It didn't prove it. It did raise the share of zeta zeros proven to sit on the critical line from 41.6 to 67.2 percent, with about 60 subagents, thousands of numerical checks and a Lean 4 proof. Fun detail: the person prompting it was Jarred Sumner, from the Bun slide.">
+  <div class="eyebrow">Math</div>
+  <h2>Agents are solving math</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;margin-top:72px">
+    <div class="card">
+      <div class="k">OpenAI · Aug 1, 2026</div>
+      <p style="font-size:28px;line-height:1.35">Ten long-standing open problems resolved or advanced, including Erdős problems 183, 146 and 180</p>
+      <p style="font-size:22px;line-height:1.4;color:var(--muted);margin-top:16px">All ten formalized as Lean proofs · about $2k in tokens for all ten</p>
+    </div>
+    <div class="card">
+      <div class="k">Anthropic · Aug 10, 2026</div>
+      <p style="font-size:28px;line-height:1.35">Riemann zeta zeros proven to lie on the critical line: from 41.6% to 67.2%</p>
+      <p style="font-size:22px;line-height:1.4;color:var(--muted);margin-top:16px">About 60 subagents, thousands of numerical checks, one Lean 4 proof</p>
+    </div>
   </div>
-  <div class="source">openai.com/index/ten-advances-in-mathematics (Aug 1, 2026) · github.com/openai/ten-proofs</div>
-</section>
-
-<!-- 5 -->
-<section class="slide" data-title="Anthropic: Riemann zeta zeros" data-section="Agent speed" data-dur="30" data-tpl="56 · Two large numbers"
-  data-notes="And Anthropic: asked to take a real stab at the Riemann hypothesis. It didn't prove it. It did raise the share of zeta zeros proven to sit on the critical line from 41.6 to 67.2 percent. About 60 subagents, thousands of numerical checks against known zeros, and a Lean 4 proof. Fun detail: the person prompting it was Jarred Sumner, from the Bun slide.">
-  <div class="eyebrow">Math · Anthropic</div>
-  <h2>Riemann zeta zeros on the critical line</h2>
-  <div class="stats two" style="grid-template-columns:1.4fr 1fr">
-    <div class="stat"><div class="num" style="font-size:104px;white-space:nowrap">41.6% → 67.2%</div><div class="label">of zeros proven to lie on the critical line: the previous record, then Claude's</div></div>
-    <div class="stat"><div class="num">~60</div><div class="label">subagents, thousands of numerical checks, one Lean 4 proof</div></div>
-  </div>
-  <div class="source">anthropic.com/research/riemann-zeta (Aug 10, 2026) · github.com/anthropics/zeta-23-lean</div>
+  <div class="source">openai.com/index/ten-advances-in-mathematics · github.com/openai/ten-proofs · anthropic.com/research/riemann-zeta · github.com/anthropics/zeta-23-lean</div>
 </section>
 
 <!-- 6 -->
-<section class="slide center" data-title="How does that succeed?" data-section="The oracle" data-dur="20" data-tpl="31 · Large statement"
-  data-notes="How does something like the Bun rewrite succeed? Or a new bound on the zeta function? Models are really smart, sure. But it's also about having an oracle: a way to verify.">
+<section class="slide" data-title="The oracle loop" data-section="The oracle" data-dur="60" data-tpl="41 · Title and Content (diagram)"
+  data-notes="How does something like the Bun rewrite succeed? Or a new bound on the zeta function? Models are really smart, sure. But it's also about having an oracle: a way to verify. Bun's tests are written in TypeScript, so any implementation, Zig or Rust, can run them. Math has verification languages like Lean: every proof step is machine-checked. The agent makes an attempt, the oracle checks it, and if anything fails it fixes and tries again, until every check passes. Once you have an oracle you can run that loop a thousand times in parallel.">
   <div class="eyebrow">How does that succeed?</div>
-  <h1 class="xl">Smart models.<br>And an <span class="green">oracle.</span></h1>
-</section>
-
-<!-- 7 -->
-<section class="slide" data-title="Two oracles" data-section="The oracle" data-dur="40" data-tpl="43 · Two statements"
-  data-notes="Bun: the e2e tests are written in TypeScript, so any underlying implementation can run them. Great oracle for whether the model succeeded. Math: verification languages like Lean. Every hypothesis can be checked immediately and discarded.">
-  <div class="eyebrow">The oracle</div>
-  <h2>Each one had a way to check the answer</h2>
-  <div class="two-col">
-    <div class="card"><div class="k">Bun</div><h3>The test suite</h3><p>Written in TypeScript, so any implementation, Zig or Rust, can run it</p></div>
-    <div class="card"><div class="k">Math</div><h3>Lean</h3><p>Every proof step is machine-checked. Every hypothesis can be run and discarded immediately.</p></div>
-  </div>
-</section>
-
-<!-- 8 -->
-<section class="slide" data-title="Loops × 1,000" data-section="The oracle" data-dur="25" data-tpl="41 · Title and Content (diagram)"
-  data-notes="Once you have an oracle you can run it in a loop. Or a thousand loops in parallel, burn a lot of money, and make it happen. Development keeps moving this way: build the oracle first so you can verify and build fast.">
-  <div class="eyebrow">The oracle</div>
-  <h2>With an oracle, you can run a loop.<br><span class="dim">Or a thousand.</span></h2>
-  <svg viewBox="0 0 1360 380" width="1360" height="380" style="margin-top:40px">
-    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d9d9d9"/></marker></defs>
-    <g fill="none" stroke="#d9d9d9" stroke-width="2">
-      <rect x="20" y="130" width="230" height="100" rx="6"/>
-      <rect x="420" y="130" width="230" height="100" rx="6"/>
-      <rect x="820" y="130" width="230" height="100" rx="6" stroke="#5fed83" stroke-width="3"/>
-      <line x1="250" y1="180" x2="412" y2="180" marker-end="url(#a)"/>
-      <line x1="650" y1="180" x2="812" y2="180" marker-end="url(#a)"/>
-      <line x1="1050" y1="160" x2="1220" y2="90" marker-end="url(#a)"/>
-      <path d="M935 230 C 935 340, 135 340, 135 238" marker-end="url(#a)"/>
-    </g>
-    <g font-size="24" fill="#fff" text-anchor="middle">
-      <text x="135" y="188">agent</text>
-      <text x="535" y="188">attempt</text>
-      <text x="935" y="188" fill="#5fed83">oracle</text>
-      <text x="1290" y="88" fill="#5fed83">keep</text>
-      <text x="535" y="330" fill="#f73678">fail → discard, try again</text>
-    </g>
-    <text x="1230" y="250" font-size="44" fill="#ae85ff" text-anchor="middle">× 1,000</text>
-    <text x="1230" y="290" font-size="18" fill="#8b958f" text-anchor="middle">in parallel</text>
+  <h2>Smart models. And an <span class="green">oracle.</span></h2>
+  <svg viewBox="0 0 1360 470" width="1360" height="470" style="margin-top:24px">
+    <defs>
+      <marker id="og" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d9d9d9"/></marker>
+      <marker id="oc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#f73678"/></marker>
+      <marker id="ok" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5fed83"/></marker>
+      <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="14" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <path d="M300 170 C 300 40, 760 40, 790 132" fill="none" stroke="#d9d9d9" stroke-width="3" marker-end="url(#og)"/>
+    <text x="540" y="40" font-size="22" fill="#d9d9d9" text-anchor="middle">attempt</text>
+    <path d="M790 330 C 760 460, 300 460, 300 300" fill="none" stroke="#f73678" stroke-width="3" stroke-dasharray="10 8" marker-end="url(#oc)"/>
+    <text x="540" y="452" font-size="22" fill="#f73678" text-anchor="middle">fail → fix and try again</text>
+    <rect x="170" y="175" width="260" height="120" rx="60" fill="none" stroke="#d9d9d9" stroke-width="3"/>
+    <text x="300" y="232" font-size="36" fill="#fff" text-anchor="middle">Agent</text>
+    <text x="300" y="264" font-size="18" fill="#8b958f" text-anchor="middle">writes a change</text>
+    <rect x="620" y="135" width="340" height="200" rx="28" fill="#5fed83" fill-opacity="0.08" stroke="#5fed83" stroke-width="4" filter="url(#glow)"/>
+    <text x="790" y="232" font-size="52" fill="#5fed83" text-anchor="middle">Oracle</text>
+    <text x="790" y="270" font-size="20" fill="#d9d9d9" text-anchor="middle">runs every check</text>
+    <line x1="960" y1="235" x2="1150" y2="235" stroke="#5fed83" stroke-width="3" marker-end="url(#ok)"/>
+    <text x="1055" y="215" font-size="22" fill="#5fed83" text-anchor="middle">all pass</text>
+    <circle cx="1205" cy="235" r="40" fill="none" stroke="#5fed83" stroke-width="3"/>
+    <path d="M1187 236 L1200 249 L1225 222" fill="none" stroke="#5fed83" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
+  <div class="source">Bun: a TypeScript test suite any implementation can run · Math: Lean checks every proof step</div>
 </section>
 
 <!-- 9 -->
