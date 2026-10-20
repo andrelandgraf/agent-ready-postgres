@@ -145,12 +145,13 @@ Oct 18. A 17-slide HTML deck to feel the flow, verbatim except one redacted sent
 14. **Slide:** Recovery Any point in history is a restore point production backup-before-migration DROP TABLE notes; restored $ neon branches restore production backup-before-migration
    **Notes:** And because storage keeps the history, any point in time is a restore point. Take a backup branch before the production change. Agent drops a table: restore production to the backup.
 15. **Slide:** Demo Copilot CLI + a branch of production 7:20 Repo: AGENTS.md database rules and Neon skills 7:50 Agent branches, migrates, verifies against real data, retries 10:30 Merge: backup branch, then production 12:00 Destructive change, then restore
-   **Notes:** 6:40 total. Jump cuts are fine: prepared branch, prepared PR, finished runs.
+      **Notes:** 6:40 total. Jump cuts are fine: prepared branch, prepared PR, finished runs.
 
-7:20 Repo: AGENTS.md database rules + Neon skills.
-7:50 Copilot CLI: feature that needs a migration. Agent creates a branch, migrates, verifies against real data. If it fails: discard the branch, try again. This is the oracle loop, on a database.
-10:30 Merge. Optional: GitHub Actions creates a test branch, then a backup branch, then migrates production.
-12:00 Destructive change. Restore production from the backup branch. Show the rows are back.
+   7:20 Repo: AGENTS.md database rules + Neon skills.
+   7:50 Copilot CLI: feature that needs a migration. Agent creates a branch, migrates, verifies against real data. If it fails: discard the branch, try again. This is the oracle loop, on a database.
+   10:30 Merge. Optional: GitHub Actions creates a test branch, then a backup branch, then migrates production.
+   12:00 Destructive change. Restore production from the backup branch. Show the rows are back.
+
 16. **Slide:** What now? Agents ship fast when they can check their work. For operational systems, that check is production: instant to copy, isolated, easy to roll back. Infra has to run at agent speed.
    **Notes:** Back to what now. Agents ship fast when they can check their work. For operational systems, that check is production: a copy that's instant to create, isolated from the real thing, and easy to roll back. Programming already runs at agent speed. Infra has to catch up. Ask yourself: where can your agents experiment, and what can you recover after a mistake?
 17. **Slide:** Thank you demo repo: TBD · @andrelandgraf
