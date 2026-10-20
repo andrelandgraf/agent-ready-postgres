@@ -77,6 +77,13 @@
   .speaker .n { font-size: 26px; font-weight: 600; }
   .speaker .r { font-size: 22px; color: var(--dim); }
 
+  .agentsmd { background: #0b0f0c; border: 1px solid #26302a; border-radius: 14px; box-shadow: 0 24px 60px rgba(0,0,0,.45); overflow: hidden; }
+  .agentsmd .bar { display: flex; align-items: center; gap: 8px; padding: 14px 18px; border-bottom: 1px solid #26302a; font-family: var(--mono); font-size: 15px; color: var(--muted); }
+  .agentsmd .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2c3530; display: inline-block; }
+  .agentsmd pre { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; margin: 0; padding: 22px 26px 26px; font-family: var(--mono); font-size: 19px; line-height: 1.55; color: #d9d9d9; white-space: pre-wrap; }
+  .agentsmd .h { color: var(--green); }
+  .agentsmd .c { color: #ae85ff; }
+  .agentsmd .em { color: #fff; }
   .comic { display: flex; flex-direction: column; align-items: center; gap: 28px; margin-top: 28px; }
   .comic img { width: 1360px; border-radius: 6px; background: #fff; padding: 16px; }
   .comic .swap { display: flex; gap: 40px; align-items: baseline; font-family: var(--mono); font-size: 34px; white-space: nowrap; }
@@ -302,6 +309,33 @@
 </section>
 
 <!-- 15 -->
+<section class="slide" data-title="The dev loop" data-section="Demo" data-dur="45" data-tpl="43 · Two statements"
+  data-notes="So what does that look like for your Copilot? One section in AGENTS.md. Every time you work on a feature that touches the database: create a Neon branch, pull down its environment variables, run the app against that branch, make the migration, verify everything works end to end against the branch, then diff the schema between production and the branch. Only then report the implementation as done. That's the dev step, and it's what Copilot does in the demo.">
+  <div style="display:grid;grid-template-columns:480px 1fr;gap:64px;align-items:center;height:100%">
+    <div>
+      <div class="eyebrow">The dev loop</div>
+      <h2>Neon Postgres<br>+ your <span class="green">Copilot</span></h2>
+      <p style="font-size:24px;line-height:1.45;color:var(--dim);margin-top:28px">Every feature gets its own copy of production. The agent only reports done once it has proven the change on that copy.</p>
+    </div>
+    <div class="agentsmd">
+      <div class="bar"><i></i><i></i><i></i><span style="margin-left:10px">AGENTS.md</span></div>
+<pre><span class="h">## Dev loop: database changes</span>
+
+Every feature that touches the database:
+
+1. Create a Neon branch for the feature
+   <span class="c">neon checkout feat/addons --create</span>
+2. Pull the branch's environment variables
+   <span class="c">neon env pull</span>
+3. Run the app against that branch
+4. Make the migration and run it on the branch
+5. Verify the feature end to end on the branch
+6. Diff the schema: production vs. this branch
+   <span class="c">neon branches schema-diff main feat/addons</span>
+7. <span class="em">Only then report the implementation as done</span></pre>
+    </div>
+  </div>
+</section>
 <section class="slide" data-title="Demo" data-section="Demo" data-dur="400" data-tpl="60 · Demo"
   data-notes="6:40 total. Jump cuts are fine: prepared branch, prepared PR, finished runs.
 
