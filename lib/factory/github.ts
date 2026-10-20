@@ -156,7 +156,7 @@ export async function pullRequestState(number: number): Promise<PullRequestState
       startedAt: run.run_started_at ?? run.created_at,
       updatedAt: run.updated_at,
       steps: (jobs.jobs[0]?.steps ?? [])
-        .filter((s) => !s.name.startsWith('Set up') && !s.name.startsWith('Post ') && !s.name.startsWith('Run actions/') && s.name !== 'Complete job')
+        .filter((s) => !s.name.startsWith('Set up') && !s.name.startsWith('Post Run ') && !s.name.startsWith('Run actions/') && s.name !== 'Complete job')
         .map((s) => ({ name: s.name, status: s.status, conclusion: s.conclusion, startedAt: s.started_at, completedAt: s.completed_at })),
     };
   }
