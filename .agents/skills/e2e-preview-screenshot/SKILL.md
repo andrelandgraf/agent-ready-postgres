@@ -40,7 +40,7 @@ This runs live on stage. Be fast, not thorough. Run the steps below in order, ea
    agent-browser close
    ```
 
-3. Confirm the addon is in the preview branch's database with the `run_sql` tool of the `neon` MCP server. Do not use the `neon` CLI, `psql`, or a connection string. Call it once with exactly these arguments, putting the branch id from step 1 in `branch_id`:
+3. Confirm the addon is in the preview branch's database with the `neon-run_sql` tool (the `run_sql` tool of the `neon` MCP server). Do not use the `neon` CLI, `psql`, or a connection string. If `neon-run_sql` is not in your tool list, do not investigate: reply `Neon MCP tools did not load. Run ./scripts/e2e again.` and stop. Otherwise call it once with exactly these arguments, putting the branch id from step 1 in `branch_id`:
 
    ```json
    {"project_id": "odd-block-46739925", "branch_id": "<branch id>", "database_name": "neondb", "sql": "select name, kind from addons order by created_at desc limit 3"}
