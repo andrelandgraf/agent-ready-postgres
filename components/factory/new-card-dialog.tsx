@@ -42,6 +42,7 @@ export function NewCardDialog() {
             <Textarea
               id="new-card-notes"
               rows={4}
+              className="max-h-40"
               placeholder="Cap generations at 20 per workspace per day. Show the remaining count in the composer."
             />
           </div>
