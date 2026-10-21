@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "bun --env-file=.env.local scripts/migrate.ts",
     "reset": "bun --env-file=.env.local scripts/reset.ts",
-    "rehearse": "bun --env-file=.env.local scripts/rehearse.ts"
+    "rehearse": "bun --env-file=.env.local scripts/rehearse.ts",
+    "talk": "bun scripts/talk.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

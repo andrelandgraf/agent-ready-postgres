@@ -369,21 +369,16 @@ steps:
     </div>
   </div>
 </section>
-<section class="slide" data-title="Demo" data-section="Demo" data-dur="400" data-tpl="60 · Demo"
-  data-notes="6:40 total. Jump cuts are fine: prepared branch, prepared PR, finished runs.
-
-7:20 Repo: AGENTS.md database rules + Neon skills.
-7:50 Copilot CLI: feature that needs a migration. Agent creates a branch, migrates, verifies against real data. If it fails: discard the branch, try again. This is the oracle loop, on a database.
-10:30 Merge. Optional: GitHub Actions creates a test branch, then a backup branch, then migrates production.
-12:00 Destructive change. Restore production from the backup branch. Show the rows are back.">
+<section class="slide" data-title="Demo" data-section="Demo" data-dur="240" data-tpl="60 · Demo"
+  data-notes="Switch to the Software Factory dashboard. 0:00 one board, Neon shows only production; click + on Draft, close it. 0:04 drag Addons into To do. 0:07 dev/addons appears. 0:27 security reviewer (scripted beat). 0:37 PR opens: show the PR, then the Actions run. 1:15 schema diff comment. 1:30 back to the dashboard, preview/pr-N in Neon branches. 2:14 preview ready: switch to the terminal, ./scripts/e2e -i. 3:03 screenshot lands, ready to merge.">
   <div class="demo-bg"></div>
   <div class="eyebrow" style="position:relative">Demo</div>
-  <h1 style="position:relative">Copilot CLI + a branch<br>of production</h1>
+  <h1 style="position:relative">The Software Factory</h1>
   <div class="beats">
-    <div class="beat"><div class="at">7:20</div><p>Repo: AGENTS.md database rules and Neon skills</p></div>
-    <div class="beat"><div class="at">7:50</div><p>Agent branches, migrates, verifies against real data, retries</p></div>
-    <div class="beat"><div class="at">10:30</div><p>Merge: backup branch, then production</p></div>
-    <div class="beat"><div class="at">12:00</div><p>Destructive change, then restore</p></div>
+    <div class="beat"><div class="at">0:00</div><p>A card for a feature that changes the database</p></div>
+    <div class="beat"><div class="at">0:07</div><p>The Builder branches production</p></div>
+    <div class="beat"><div class="at">0:37</div><p>A real PR: Neon preview branch, migration, schema diff, Vercel preview</p></div>
+    <div class="beat"><div class="at">2:14</div><p>Copilot CLI tests the preview over Neon MCP</p></div>
   </div>
 </section>
 
@@ -400,7 +395,7 @@ steps:
 <section class="slide center" data-title="Thank you" data-section="Close" data-dur="15" data-tpl="73 · Thank you (+ 72 Survey if required)"
   data-notes="Demo repo link or QR here.">
   <h1 class="xl">Thank you</h1>
-  <p class="mono" style="margin-top:32px">demo repo: TBD · @andrelandgraf</p>
+  <p class="mono" style="margin-top:32px">demo: github.com/andrelandgraf/agent-ready-postgres · @andrelandgraf</p>
 </section>
 
 </div></div>
