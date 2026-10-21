@@ -1,6 +1,101 @@
 # Make your Postgres agent-ready
 
-Talk notes for GitHub Universe 2026, all versions in one place. The current version is on top; past versions stay below unchanged so we can swap parts back in.
+Talk notes for GitHub Universe 2026, all versions in one place. The script I'm practicing comes first; the versions below keep everything else, current version on top, past versions unchanged so we can swap parts back in.
+
+## Script
+
+What I say, slide by slide, for the current deck ([talk-deck-v3](talk-deck-v3/index.html)). Practice with `bun run talk`: the slides and this script side by side. Planned time is 13:10 of the 15-minute slot.
+
+### 1. Title
+
+Hi, I'm Andre. I'm a developer advocate at Databricks and I work on Neon. Today I want to talk about making your Postgres agent-ready.
+
+### 2. Agent speed
+
+What a time to be alive. Heading into 2027, programming runs at agent speed. Two examples.
+
+### 3. Bun: Zig → Rust
+
+Bun was just rewritten from Zig to Rust. That's 535,496 lines of Zig, rewritten in 11 days. Jarred Sumner's own estimate for doing it by hand: three engineers with full context on the codebase, about a year. Funny enough, the rewrite merged on May 14 and the blog post about it came out almost two months later.
+
+### 4. Math
+
+And math is apparently getting solved. I'm not smart enough to explain the proofs, but here's what happened this summer. OpenAI published ten results on long-standing open problems, including three Erdős problems, all ten formalized in Lean, for about 2,000 dollars in tokens. And Anthropic raised the share of Riemann zeta zeros proven to lie on the critical line from 41.6 to 67.2 percent. Fun detail: the person prompting that one was Jarred Sumner, from the Bun slide.
+
+### 5. The oracle loop
+
+How does that work? Of course, the models are really smart. But nobody typed "rewrite Bun in Rust" and walked away. Both had an oracle: a way to check the answer.
+
+Bun's test suite is written in TypeScript, so the Zig and the Rust versions can both run it. In Jarred's words: "Bun's own test suite is written in TypeScript which means it doesn't depend on the runtime's programming language." Math has Lean, which checks every proof step.
+
+So the agent makes an attempt and the oracle runs every check. If anything fails, the agent fixes it and tries again. Until everything passes. And once you have an oracle, you can run that loop a thousand times in parallel.
+
+### 6. Agents get it wrong
+
+That loop matters because agents get things wrong. A lot. Claude's first pass at the zeta problem: 650 ideas, none of them worked. And Donald Knuth wrote about Claude solving one of his open problems: he had to restart it when it stopped on random errors and earlier search results were lost. Agents need room to fail and a way to recover.
+
+### 7. Bobby Tables
+
+In a database, "wrong" looks like this. We all know little Bobby Tables. Now cross out his name: it's your coding agent that dropped the table. What now?
+
+### 8. Agent factories need infra
+
+So what's the oracle for the apps you build? I would argue it's production. If it runs and works in production, it's safe to merge.
+
+That's always been the goal for developers. With agents it matters more, because we want to be out of the loop as much as possible. So preview, staging and dev need to be reproducible and as close to production as possible.
+
+The closest thing to production is production. But you can't let an agent loose on your production database. So we need copies: instant, one per attempt; isolated, so nothing an agent does touches the real thing; and recoverable, so every mistake has an undo. Infra has to run at agent speed. Today, I want to talk about the database.
+
+### 9. Lakebase Postgres
+
+I work at Neon. Neon was a serverless Postgres startup; Databricks acquired it and we combined our work with what Databricks was already building. The database is called Lakebase Postgres and it runs on the lakebase architecture.
+
+Compute is ephemeral: Postgres with RAM and an NVMe cache. Storage is durable: safekeepers commit the WAL by quorum, the pageserver turns WAL into pages and object storage keeps the full history.
+
+There are two ways in. Lakebase on databricks.com if you're a Databricks customer. And neon.com for startups, hobbyists and everyone else, with a free plan. Same database on both.
+
+### 10. Copy-on-write branches
+
+Because storage keeps the history, a branch is just a new compute on that same history. Copy-on-write: no data is copied, writes are isolated and creating one takes seconds, whatever the size. So every agent loop gets its own copy of production. That's the oracle for database changes.
+
+### 11. Restore points
+
+And any point in that history is a restore point. Take a backup branch before a risky change. If an agent drops a table, restore production to the backup and the rows are back.
+
+### 12. The dev loop
+
+So what does this look like for your Copilot? One section in AGENTS.md. Every feature that touches the database: create a Neon branch, pull its environment variables, run the app against it, make and run the migration, verify everything end to end, then diff the schema against production. Only then report the implementation as done.
+
+### 13. The CI loop
+
+Then CI does the same for every pull request. Create a branch, run the migration, post the schema diff on the PR and boot up a preview of the whole stack: Vercel for the UI and a Neon branch for the backend, with Lakebase Postgres, Auth and Functions. Let me show you.
+
+### 14. Demo
+
+Switch to the Software Factory dashboard. Times are from dragging the card (5-run average). The board's migration, test and review beats are scripted; the branches, PR, workflow, preview and Copilot run are real.
+
+| Time | Do | Say |
+|---|---|---|
+| 0:00 | Dashboard | This is the Software Factory. It builds features for vibecastly, an AI image studio running on Neon. Neon shows one branch: production. |
+| 0:00 | Click + on Draft, then close | Work starts as a card: someone writes down a feature. |
+| 0:04 | Drag Addons into To do | Addons lets you tag items and backgrounds in prompts, next to people. I drag it into To do and the agents pick it up. |
+| 0:07 | Point at Neon branches | The Builder branches production. There's `dev/addons`, a full copy of production, in about a second. |
+| 0:27 | Card | It runs the migration and tests on that branch. A security reviewer checks the diff. |
+| 0:37 | Open the PR, then the Actions run | Here's a real pull request. The workflow branches production again for the preview, runs the Drizzle migration and posts the schema diff. |
+| 1:15 | PR comment | The database change is part of the review. |
+| 1:30 | Back to the dashboard | `preview/pr-N` is there and Vercel is building the UI against that branch. |
+| 2:14 | Switch to the terminal: `./scripts/e2e -i` | The preview is ready. The E2E tester is Copilot CLI with the Neon MCP server and a browser. It signs in to the preview, adds a party hat, writes a prompt and checks in the preview branch's database that the row is there. |
+| 3:03 | Dashboard | Screenshot's in. Ready to merge. And production was never touched. |
+
+If the preview runs long, the board switches to the prepared PR on its own: "This one's running long, so here's one I prepared earlier."
+
+### 15. Close
+
+Back to "what now?" Agents ship fast when they can check their work. For operational systems, that check is production: a copy that's instant to create, isolated from the real thing and easy to throw away. Programming already runs at agent speed. Infra has to catch up. So where can your agents experiment and what can they recover after a mistake?
+
+### 16. Thank you
+
+Thank you! The demo is on GitHub at andrelandgraf/agent-ready-postgres. Happy coding!
 
 | | |
 |---|---|

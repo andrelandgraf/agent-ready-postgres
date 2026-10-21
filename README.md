@@ -22,6 +22,7 @@ bun run dev               # dashboard on http://127.0.0.1:3100; sign in with FAC
 bun run reset             # close the demo PR, delete dev/preview branches and preview deployments
 bun run rehearse          # run the real steps from the terminal, timed, then reset
 bun run rehearse --e2e    # same, including the Copilot CLI e2e agent
+bun run talk              # practice view on http://127.0.0.1:4826: slides next to the script in docs/talk.md, live-reloading both
 ```
 
 The dashboard's Reset button does what `bun run reset` does. Reset only touches what the demo creates: PRs from `feat/addons`, the `dev/addons` branch, and `preview/pr-<n>` branches and deployments of those PRs.
