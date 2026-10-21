@@ -36,6 +36,7 @@
   #doc a { color: var(--green); }
   #reloaded { color: var(--green); opacity: 0; transition: opacity .3s; }
   #reloaded.show { opacity: 1; }
+  #stale { color: #f73678; }
 </style>
 </head>
 <body>
@@ -46,6 +47,7 @@
   <button id="next" title="Next slide (→)">→</button>
   <label><input type="checkbox" id="follow" checked> follow the script</label>
   <span id="reloaded">reloaded</span>
+  <span id="stale" hidden>live reload stopped: check `bun run talk`</span>
   <span class="spacer"></span>
   <span class="muted">Click a script heading to jump · edit talk.md or talk-deck-v3/index.html and this page updates</span>
 </header>
@@ -135,8 +137,10 @@
         deckText = k;
         if (!first) { deck.src = `${DECK}?t=${Date.now()}#${slide}`; flash(); }
       }
+      document.getElementById('stale').hidden = true;
     } catch (error) {
       console.error('[practice] reload failed:', error);
+      document.getElementById('stale').hidden = false;
     }
   }
   poll();

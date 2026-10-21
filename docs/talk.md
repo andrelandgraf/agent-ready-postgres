@@ -28,11 +28,11 @@ How does that work? Of course, the models are really smart. But nobody typed "re
 
 Bun's test suite is written in TypeScript, so the Zig and the Rust versions can both run it. In Jarred's words: "Bun's own test suite is written in TypeScript which means it doesn't depend on the runtime's programming language." Math has Lean, which checks every proof step.
 
-So the agent makes an attempt, the oracle runs every check, and if anything fails, the agent fixes it and tries again. Until everything passes. And once you have an oracle, you can run that loop a thousand times in parallel.
+So the agent makes an attempt and the oracle runs every check. If anything fails, the agent fixes it and tries again. Until everything passes. And once you have an oracle, you can run that loop a thousand times in parallel.
 
 ### 6. Agents get it wrong
 
-That loop matters because agents get things wrong. A lot. Claude's first pass at the zeta problem: 650 ideas, none of them worked. And Donald Knuth wrote about Claude solving one of his open problems: he had to restart it when it stopped on random errors, and earlier search results were lost. Agents need room to fail and a way to recover.
+That loop matters because agents get things wrong. A lot. Claude's first pass at the zeta problem: 650 ideas, none of them worked. And Donald Knuth wrote about Claude solving one of his open problems: he had to restart it when it stopped on random errors and earlier search results were lost. Agents need room to fail and a way to recover.
 
 ### 7. Bobby Tables
 
@@ -42,7 +42,7 @@ In a database, "wrong" looks like this. We all know little Bobby Tables. Now cro
 
 So what's the oracle for the apps you build? I would argue it's production. If it runs and works in production, it's safe to merge.
 
-That's always been the goal for developers. With agents it matters more, because we want to be out of the loop as much as possible. So preview, staging and dev need to be as close to production as possible, and reproducible.
+That's always been the goal for developers. With agents it matters more, because we want to be out of the loop as much as possible. So preview, staging and dev need to be reproducible and as close to production as possible.
 
 The closest thing to production is production. But you can't let an agent loose on your production database. So we need copies: instant, one per attempt; isolated, so nothing an agent does touches the real thing; and recoverable, so every mistake has an undo. Infra has to run at agent speed. Today, I want to talk about the database.
 
@@ -52,7 +52,7 @@ I work at Neon. Neon was a serverless Postgres startup; Databricks acquired it a
 
 Compute is ephemeral: Postgres with RAM and an NVMe cache. Storage is durable: safekeepers commit the WAL by quorum, the pageserver turns WAL into pages and object storage keeps the full history.
 
-There are two ways in. Lakebase on databricks.com if you're a Databricks customer, and neon.com for startups, hobbyists and everyone else, with a free plan. Same database on both.
+There are two ways in. Lakebase on databricks.com if you're a Databricks customer. And neon.com for startups, hobbyists and everyone else, with a free plan. Same database on both.
 
 ### 10. Copy-on-write branches
 
@@ -80,10 +80,10 @@ Switch to the Software Factory dashboard. Times are from dragging the card (5-ru
 | 0:00 | Click + on Draft, then close | Work starts as a card: someone writes down a feature. |
 | 0:04 | Drag Addons into To do | Addons lets you tag items and backgrounds in prompts, next to people. I drag it into To do and the agents pick it up. |
 | 0:07 | Point at Neon branches | The Builder branches production. There's `dev/addons`, a full copy of production, in about a second. |
-| 0:27 | Card | It runs the migration and tests on that branch, and a security reviewer checks the diff. |
+| 0:27 | Card | It runs the migration and tests on that branch. A security reviewer checks the diff. |
 | 0:37 | Open the PR, then the Actions run | Here's a real pull request. The workflow branches production again for the preview, runs the Drizzle migration and posts the schema diff. |
 | 1:15 | PR comment | The database change is part of the review. |
-| 1:30 | Back to the dashboard | `preview/pr-N` is there, and Vercel is building the UI against that branch. |
+| 1:30 | Back to the dashboard | `preview/pr-N` is there and Vercel is building the UI against that branch. |
 | 2:14 | Switch to the terminal: `./scripts/e2e -i` | The preview is ready. The E2E tester is Copilot CLI with the Neon MCP server and a browser. It signs in to the preview, adds a party hat, writes a prompt and checks in the preview branch's database that the row is there. |
 | 3:03 | Dashboard | Screenshot's in. Ready to merge. And production was never touched. |
 
@@ -91,7 +91,7 @@ If the preview runs long, the board switches to the prepared PR on its own: "Thi
 
 ### 15. Close
 
-Back to "what now?" Agents ship fast when they can check their work. For operational systems, that check is production: a copy that's instant to create, isolated from the real thing and easy to throw away. Programming already runs at agent speed. Infra has to catch up. So where can your agents experiment, and what can they recover after a mistake?
+Back to "what now?" Agents ship fast when they can check their work. For operational systems, that check is production: a copy that's instant to create, isolated from the real thing and easy to throw away. Programming already runs at agent speed. Infra has to catch up. So where can your agents experiment and what can they recover after a mistake?
 
 ### 16. Thank you
 
