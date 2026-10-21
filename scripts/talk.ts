@@ -16,8 +16,14 @@ const types: Record<string, string> = {
 };
 
 createServer(async (request, response) => {
-  const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
-  const path = resolve(root, `.${decodeURIComponent(pathname === '/' ? '/practice.html' : pathname)}`);
+  let path: string;
+  try {
+    const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
+    path = resolve(root, `.${decodeURIComponent(pathname === '/' ? '/practice.html' : pathname)}`);
+  } catch {
+    response.writeHead(400).end('Bad request');
+    return;
+  }
   if (path !== root && !path.startsWith(root + sep)) {
     response.writeHead(404).end('Not found');
     return;
