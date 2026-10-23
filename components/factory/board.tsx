@@ -2,7 +2,8 @@
 
 import { useState, type DragEvent } from 'react';
 import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
-import { CheckCircle2, GitPullRequest, Loader2, GripVertical, Sparkles } from 'lucide-react';
+import { CheckCircle2, GitBranch, GitPullRequest, Loader2 } from 'lucide-react';
+import { FACTORY } from '@/lib/factory/config';
 import { AGENTS, type Beat, type ColumnId } from '@/lib/factory/sequence';
 import type { FactoryState } from '@/lib/factory/state';
 import { AgentAvatar, agentTextClass } from './agents';
@@ -29,21 +30,17 @@ function FeatureCard({ beat, state, draggable }: { beat: Beat | null; state: Fac
       layoutId="feature-card"
       layout
       transition={{ type: 'spring', stiffness: 260, damping: 28 }}
-      className={`relative rounded-xl border p-3.5 shadow-lg ${
-        done ? 'border-primary/60 bg-primary/10' : 'border-primary/30 bg-card'
+      className={`relative rounded-xl border p-3.5 shadow-sm transition-colors ${
+        done ? 'border-primary/60 bg-primary/10' : 'border-border/70 bg-card hover:border-primary/40'
       } ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
     >
-      <div className="flex items-start gap-2">
-        {draggable && <GripVertical className="mt-0.5 size-4 shrink-0 text-muted-foreground" />}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 text-[15px] font-semibold">
-            <Sparkles className="size-4 text-primary" /> Addons
-          </div>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Tag items and background images in prompts, next to people.
-          </p>
-        </div>
+      <div className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
+        <GitBranch className="size-3" /> {FACTORY.headBranch}
       </div>
+      <div className="mt-1.5 text-[15px] leading-snug font-semibold">Addons</div>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+        Tag items and background images in prompts, next to people.
+      </p>
 
       {beat && (
         <>
